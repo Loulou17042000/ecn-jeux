@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory - ECN</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f1117;--card:#1a1d27;--card2:#232635;--accent:#6c63ff;--accent2:#ff6584;--green:#2ecc71;--red:#e74c3c;--text:#e0e0e8;--muted:#8888a0;--border:#2a2d3e;--radius:12px;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px;line-height:1.6;}
+h1{font-size:1.8rem;margin-bottom:4px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.subtitle{color:var(--muted);font-size:.9rem;margin-bottom:20px;}
+.container{max-width:800px;width:100%;}
+.stats{display:flex;gap:20px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;}
+.stat{background:var(--card);border:1px solid var(--border);padding:8px 18px;border-radius:99px;font-size:.9rem;}
+.stat span{color:var(--accent);font-weight:700;}
+.board{display:grid;gap:10px;margin-bottom:20px;}
+.board.cols-4{grid-template-columns:repeat(4,1fr);}
+.board.cols-6{grid-template-columns:repeat(6,1fr);}
+.mem-card{aspect-ratio:1/1.1;border-radius:var(--radius);cursor:pointer;perspective:600px;min-height:80px;}
+.mem-card-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;}
+.mem-card.flipped .mem-card-inner{transform:rotateY(180deg);}
+.mem-card.matched .mem-card-inner{transform:rotateY(180deg);}
+.mem-card.matched{opacity:.6;pointer-events:none;}
+.mem-front,.mem-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;padding:8px;text-align:center;font-size:.78rem;line-height:1.3;}
+.mem-front{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:1.5rem;font-weight:700;}
+.mem-back{background:var(--card);border:1px solid var(--border);transform:rotateY(180deg);color:var(--text);font-weight:600;}
+.mem-back.type-term{border-color:var(--accent);background:rgba(108,99,255,.1);}
+.mem-back.type-def{border-color:var(--accent2);background:rgba(255,101,132,.08);}
+.ch-badge{display:inline-block;background:var(--accent);color:#fff;font-size:.6rem;padding:1px 6px;border-radius:99px;font-weight:700;position:absolute;top:6px;left:6px;}
+.btn{padding:10px 22px;border:none;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{filter:brightness(1.15);}
+.btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center;}
+.results-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;}
+.results-card h2{text-align:center;margin-bottom:6px;}
+.final-score{text-align:center;font-size:2.8rem;font-weight:800;margin:10px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.final-sub{text-align:center;color:var(--muted);margin-bottom:20px;}
+.start-screen{text-align:center;padding:40px 20px;}
+.start-screen p{color:var(--muted);max-width:500px;margin:14px auto;}
+.start-icon{font-size:4rem;margin-bottom:10px;}
+.rules{text-align:left;background:var(--card2);border-radius:8px;padding:16px 20px;margin:18px 0;font-size:.9rem;color:var(--muted);}
+.rules li{margin-bottom:4px;list-style:disc inside;}
+@keyframes popIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+@media(max-width:500px){
+  body{padding:12px;}
+  .board.cols-4{grid-template-columns:repeat(3,1fr);}
+  .board.cols-6{grid-template-columns:repeat(3,1fr);}
+  .mem-back{font-size:.7rem;padding:5px;}
+}
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script>
+const ALL_PAIRS=[
+{ch:"Ch1",term:"Schnapper (2000)",def:"Citoyennete = sens juridique"},
+{ch:"Ch1",term:"DigComp 3.0",def:"Referentiel europeen : 5 domaines, 17 competences"},
+{ch:"Ch1",term:"Richardson & Milovidov (2020)",def:"Modele 3 niveaux (A, B, C) citoyennete numerique"},
+{ch:"Ch1",term:"Hadyeh et al. (2017)",def:"4 dimensions : politique, sociale, culturelle, economique"},
+{ch:"Ch1",term:"Herreman et al. (2017)",def:"Axes individuel/collectif et interieur/exterieur"},
+{ch:"Ch1",term:"Leblanc et al. (2021)",def:"Evolution du concept de citoyennete numerique"},
+{ch:"Ch1",term:"Charte droits fondamentaux UE",def:"54 articles, 7 decembre 2000"},
+{ch:"Ch1",term:"Metaphore de la chaise",def:"4 pieds = 4 dimensions de la citoyennete"},
+{ch:"Ch1",term:"362 enonces",def:"Total competences DigComp 3.0"},
+{ch:"Ch2",term:"Illectronisme",def:"Maitrise insuffisante competences numeriques de base (ANLCI)"},
+{ch:"Ch2",term:"Fracture numerique",def:"Fossee acces aux TIC, apparu annees 1990"},
+{ch:"Ch2",term:"Dagnies (2016)",def:"8 degres de fracture numerique"},
+{ch:"Ch2",term:"WCAG",def:"4 principes : Perceptible, Utilisable, Comprehensible, Robuste"},
+{ch:"Ch2",term:"Directive 2016/2102",def:"Accessibilite sites web secteur public"},
+{ch:"Ch2",term:"32% des Wallons",def:"Citoyens eloignes du numerique (Barometre 2023)"},
+{ch:"Ch2",term:"70% contenu web",def:"Inaccessible (Contentsquare, 2021)"},
+{ch:"Ch2",term:"cMOOC",def:"Connectiviste, co-construction des savoirs"},
+{ch:"Ch2",term:"EPN",def:"Espace Public Numerique"},
+{ch:"Ch3",term:"Ertzscheid (2013)",def:"3 types de traces : profilaires, navigationnelles, inscriptibles"},
+{ch:"Ch3",term:"Identite numerique",def:"Somme des donnees et traces associees au nom (Filliettaz)"},
+{ch:"Ch3",term:"Cookie",def:"Temoin de connexion en fichier texte local"},
+{ch:"Ch3",term:"Netiquette",def:"Conventions de bienseance en ligne (NET + etiquette)"},
+{ch:"Ch3",term:"Effet bulle",def:"Algorithmes qui retrecissent l'univers informationnel"},
+{ch:"Ch3",term:"UNIA",def:"Institution belge de lutte contre la discrimination"},
+{ch:"Ch3",term:"12 composantes (Wauters)",def:"Identite numerique : coordonnees, avatar, reputation..."},
+{ch:"Ch3",term:"Trace passive",def:"Donnees collectees a l'insu de l'utilisateur"},
+{ch:"Ch3",term:"Grooming",def:"Manipulation progressive d'un mineur en ligne"},
+{ch:"Ch3",term:"Revenge porn",def:"Partage images intimes sans consentement"},
+{ch:"Ch4",term:"Phishing",def:"Hameconnage par email (CNIL)"},
+{ch:"Ch4",term:"Smishing",def:"Phishing par SMS (IBM)"},
+{ch:"Ch4",term:"Vishing",def:"Phishing par telephone (voice)"},
+{ch:"Ch4",term:"Quishing",def:"Phishing par QR code (Safeonweb.be)"},
+{ch:"Ch4",term:"Ransomware",def:"Logiciel chiffrant donnees + rancon"},
+{ch:"Ch4",term:"VPN",def:"Tunnel chiffre masquant l'adresse IP"},
+{ch:"Ch4",term:"FOMO",def:"Fear of Missing Out"},
+{ch:"Ch4",term:"Nomophobie",def:"Peur d'etre sans telephone (NMP-Q)"},
+{ch:"Ch4",term:"Catfishing",def:"Fausse identite en ligne (documentaire 2010)"},
+{ch:"Ch4",term:"Broutage",def:"Escroquerie sentimentale (Adou, 2022)"},
+{ch:"Ch4",term:"Whaling",def:"Spear phishing visant les CEO/CFO"},
+{ch:"Ch4",term:"Safeonweb.be",def:"Plateforme belge cybersecurite (CCB)"},
+{ch:"Ch4",term:"Comparaison sociale",def:"Festinger (1954), amplifiee par les RSN"},
+{ch:"Ch5",term:"RGPD",def:"Reglement protection donnees, mai 2018, 20M EUR/4% CA"},
+{ch:"Ch5",term:"Donnees sensibles",def:"Origine ethnique, sante, opinions politiques..."},
+{ch:"Ch5",term:"DPO",def:"Delegue a la Protection des Donnees"},
+{ch:"Ch5",term:"Droit a la portabilite",def:"Recuperer ses donnees pour un autre prestataire"},
+{ch:"Ch5",term:"Droit a l'oubli",def:"Effacement donnees dans les meilleurs delais"},
+{ch:"Ch5",term:"30 ans",def:"Duree conservation dossier patient adulte"},
+{ch:"Ch5",term:"Article 39 Code deonto",def:"Publicite psychologue"},
+{ch:"Ch5",term:"6 principes traitement",def:"Liceite, finalites, minimisation, exactitude..."},
+{ch:"Ch6",term:"Fake news",def:"Articles intentionnellement trompeurs (Philipps, 2020)"},
+{ch:"Ch6",term:"Desinformation",def:"Info fausse avec intention de tromper"},
+{ch:"Ch6",term:"Mesinformation",def:"Info fausse diffusee sans mauvaise intention"},
+{ch:"Ch6",term:"Deepfake",def:"Hypertrucage photo/video (Dahmani, 2023)"},
+{ch:"Ch6",term:"CSEM",def:"Conseil Superieur Education aux Medias (Decret 2008)"},
+{ch:"Ch6",term:"5 lois UNESCO EMI",def:"Inspirees de Ranganathan (1931)"},
+{ch:"Ch6",term:"Clickbait",def:"Piege a clics : titre provocant, contenu decevant"},
+{ch:"Ch6",term:"Propagande",def:"Communication de masse partiale (Auge, 2007)"},
+{ch:"Ch6",term:"Theorie du complot",def:"Groupe omnipotent controlant secretement (Fenster, 1999)"},
+{ch:"Ch3",term:"Cardon (2019)",def:"4 familles de relations en ligne"},
+{ch:"Ch6",term:"Rumeur",def:"Information non verifiee, bouche a oreille"}
+];
+
+const PAIRS_PER_ROUND=8;
+let cards,flipped,matched,moves,timer,seconds,timerInterval;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function init(){showStart();}
+
+function showStart(){
+  document.getElementById('app').innerHTML=`
+    <h1>Memory ECN</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <div class="start-screen">
+      <div class="start-icon">&#129504;</div>
+      <h2>Trouve les paires !</h2>
+      <p>Associe chaque terme a sa definition. ${ALL_PAIRS.length} paires possibles, ${PAIRS_PER_ROUND} par manche.</p>
+      <ul class="rules">
+        <li>${PAIRS_PER_ROUND} paires par manche (${PAIRS_PER_ROUND*2} cartes)</li>
+        <li>Retourne 2 cartes : terme + definition correspondante</li>
+        <li>Moins de coups = meilleur score</li>
+        <li>Le chronometre tourne !</li>
+      </ul>
+      <button class="btn btn-primary" onclick="startGame()">Jouer</button>
+    </div>`;
+}
+
+function startGame(){
+  const selected=shuffle([...ALL_PAIRS]).slice(0,PAIRS_PER_ROUND);
+  cards=[];
+  selected.forEach((p,i)=>{
+    cards.push({id:i,type:'term',text:p.term,ch:p.ch,pairId:i});
+    cards.push({id:i,type:'def',text:p.def,ch:p.ch,pairId:i});
+  });
+  shuffle(cards);
+  flipped=[];matched=[];moves=0;seconds=0;
+  if(timerInterval)clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{seconds++;updateStats();},1000);
+  renderBoard();
+}
+
+function updateStats(){
+  const el=document.getElementById('timer');
+  if(el)el.textContent=formatTime(seconds);
+}
+
+function formatTime(s){const m=Math.floor(s/60);const ss=s%60;return `${m}:${ss<10?'0':''}${ss}`;}
+
+function renderBoard(){
+  const cols=cards.length<=16?4:6;
+  let boardHtml=cards.map((c,i)=>{
+    const isFlipped=flipped.includes(i)||matched.includes(c.pairId);
+    const isMatched=matched.includes(c.pairId);
+    return `<div class="mem-card ${isFlipped?'flipped':''} ${isMatched?'matched':''}" onclick="flipCard(${i})">
+      <div class="mem-card-inner">
+        <div class="mem-front">?</div>
+        <div class="mem-back type-${c.type}"><span class="ch-badge">${c.ch}</span>${c.text}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('app').innerHTML=`
+    <h1>Memory ECN</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <div class="stats">
+      <div class="stat">Coups : <span>${moves}</span></div>
+      <div class="stat">Paires : <span>${matched.length}/${PAIRS_PER_ROUND}</span></div>
+      <div class="stat">Temps : <span id="timer">${formatTime(seconds)}</span></div>
+    </div>
+    <div class="board cols-${cols}">${boardHtml}</div>`;
+}
+
+function flipCard(i){
+  const c=cards[i];
+  if(flipped.includes(i)||matched.includes(c.pairId)||flipped.length>=2)return;
+  flipped.push(i);
+  renderBoard();
+  if(flipped.length===2){
+    moves++;
+    const c1=cards[flipped[0]],c2=cards[flipped[1]];
+    if(c1.pairId===c2.pairId&&c1.type!==c2.type){
+      matched.push(c1.pairId);
+      flipped=[];
+      renderBoard();
+      if(matched.length===PAIRS_PER_ROUND){
+        clearInterval(timerInterval);
+        setTimeout(showResults,600);
+      }
+    } else {
+      setTimeout(()=>{flipped=[];renderBoard();},1000);
+    }
+  }
+}
+
+function showResults(){
+  const stars=moves<=PAIRS_PER_ROUND+4?'&#11088;&#11088;&#11088;':moves<=PAIRS_PER_ROUND*2?'&#11088;&#11088;':'&#11088;';
+  document.getElementById('app').innerHTML=`
+    <h1>Memory ECN</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <div class="results-card">
+      <h2>Bravo !</h2>
+      <div class="final-score">${moves} coups</div>
+      <div class="final-sub">Temps : ${formatTime(seconds)}</div>
+      <div style="text-align:center;font-size:1.5rem;margin-bottom:14px">${stars}</div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="startGame()">&#128260; Rejouer</button>
+        <button class="btn btn-primary" onclick="init()">Menu</button>
+      </div>
+    </div>`;
+}
+
+init();
+</script>
+</body>
+</html>

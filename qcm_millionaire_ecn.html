@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qui veut gagner des millions ? - ECN</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0c14;--card:#141827;--card2:#1e2236;--accent:#6c63ff;--accent2:#ff6584;--green:#2ecc71;--red:#e74c3c;--gold:#f1c40f;--text:#e0e0e8;--muted:#8888a0;--border:#2a2d3e;--radius:12px;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px;line-height:1.6;}
+h1{font-size:1.8rem;margin-bottom:4px;background:linear-gradient(135deg,var(--gold),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.subtitle{color:var(--muted);font-size:.9rem;margin-bottom:20px;}
+.container{max-width:750px;width:100%;}
+.game-layout{display:flex;gap:20px;align-items:flex-start;}
+.main-area{flex:1;min-width:0;}
+.ladder{width:160px;flex-shrink:0;}
+.ladder-step{padding:6px 10px;font-size:.78rem;border-radius:6px;margin-bottom:3px;background:var(--card2);border:1px solid var(--border);display:flex;justify-content:space-between;transition:all .3s;}
+.ladder-step.current{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;}
+.ladder-step.done{background:rgba(46,204,113,.15);border-color:var(--green);color:var(--green);}
+.ladder-step.safe{border-left:3px solid var(--gold);}
+.question-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;position:relative;overflow:hidden;}
+.question-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--accent2));}
+.ch-badge{display:inline-block;background:var(--accent);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:99px;margin-bottom:10px;font-weight:700;}
+.q-text{font-size:1.05rem;font-weight:600;margin-bottom:18px;line-height:1.5;}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.opt-btn{padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:.92rem;cursor:pointer;transition:all .3s;text-align:left;}
+.opt-btn:hover:not(:disabled){border-color:var(--gold);background:rgba(241,196,15,.08);}
+.opt-btn.correct{border-color:var(--green);background:rgba(46,204,113,.2);color:var(--green);}
+.opt-btn.wrong{border-color:var(--red);background:rgba(231,76,60,.2);color:var(--red);}
+.opt-btn.eliminated{opacity:.25;pointer-events:none;}
+.opt-btn:disabled{cursor:not-allowed;}
+.opt-btn .letter{color:var(--gold);font-weight:700;margin-right:8px;}
+.jokers{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.joker-btn{padding:8px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card2);color:var(--text);font-size:.82rem;cursor:pointer;transition:all .2s;}
+.joker-btn:hover:not(:disabled){border-color:var(--gold);}
+.joker-btn:disabled{opacity:.3;cursor:not-allowed;}
+.joker-btn.used{opacity:.3;text-decoration:line-through;}
+.hint-box{padding:12px 16px;background:rgba(108,99,255,.1);border:1px solid var(--accent);border-radius:8px;margin-top:12px;font-size:.9rem;animation:popIn .3s ease;}
+.audience-box{padding:12px 16px;background:rgba(241,196,15,.08);border:1px solid var(--gold);border-radius:8px;margin-top:12px;font-size:.85rem;animation:popIn .3s ease;}
+.audience-bar{display:flex;align-items:center;gap:8px;margin-top:4px;}
+.audience-bar .bar{flex:1;height:16px;background:var(--card);border-radius:4px;overflow:hidden;}
+.audience-bar .bar-fill{height:100%;background:var(--gold);border-radius:4px;transition:width .5s;}
+.audience-bar .pct{width:35px;font-size:.8rem;font-weight:700;}
+.btn{padding:10px 22px;border:none;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{filter:brightness(1.15);}
+.btn-gold{background:var(--gold);color:#000;}
+.btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center;}
+.feedback{padding:14px 18px;border-radius:8px;margin-top:14px;font-weight:600;animation:popIn .35s ease;}
+.feedback.correct{background:rgba(46,204,113,.15);border:1px solid var(--green);color:var(--green);}
+.feedback.wrong{background:rgba(231,76,60,.15);border:1px solid var(--red);color:var(--red);}
+@keyframes popIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.results-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;}
+.results-card h2{text-align:center;margin-bottom:6px;}
+.final-score{text-align:center;font-size:2.2rem;font-weight:800;margin:10px 0;background:linear-gradient(135deg,var(--gold),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.final-sub{text-align:center;color:var(--muted);margin-bottom:20px;}
+.start-screen{text-align:center;padding:40px 20px;}
+.start-screen p{color:var(--muted);max-width:500px;margin:14px auto;}
+.start-icon{font-size:4rem;margin-bottom:10px;}
+.rules{text-align:left;background:var(--card2);border-radius:8px;padding:16px 20px;margin:18px 0;font-size:.9rem;color:var(--muted);}
+.rules li{margin-bottom:4px;list-style:disc inside;}
+@media(max-width:700px){
+  .game-layout{flex-direction:column-reverse;}
+  .ladder{width:100%;display:flex;flex-wrap:wrap;gap:4px;}
+  .ladder-step{flex:1;min-width:60px;font-size:.7rem;text-align:center;justify-content:center;}
+  .options{grid-template-columns:1fr;}
+  body{padding:12px;}
+}
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script>
+const BANK=[
+// Ch1
+{ch:"Ch1",q:"Selon l'Academie francaise (2013), quel terme doit etre privilegie en contexte technologique ?",a:"Numerique",o:["Digital","Numerique","Informatique","Electronique"],h:"Ce terme vient du latin 'numerus' (le nombre)."},
+{ch:"Ch1",q:"Combien de competences compte le DigComp 3.0 ?",a:"17",o:["12","17","21","25"],h:"Reparties en 5 domaines."},
+{ch:"Ch1",q:"Quel modele comporte 3 niveaux (A, B, C) pour la citoyennete numerique ?",a:"Richardson & Milovidov (2020)",o:["DigComp 3.0","Richardson & Milovidov (2020)","Hadyeh et al. (2017)","Herreman et al. (2017)"],h:"Publie par le Conseil de l'Europe."},
+{ch:"Ch1",q:"Combien de competences comprend le niveau A du modele de Richardson & Milovidov ?",a:"20",o:["10","15","20","25"],h:"Pour une culture de la democratie."},
+{ch:"Ch1",q:"Selon Schnapper (2000), la citoyennete a d'abord un sens :",a:"Juridique",o:["Politique","Social","Juridique","Economique"],h:"Le citoyen est 'sujet de droit'."},
+{ch:"Ch1",q:"Combien d'articles contient la Charte des droits fondamentaux de l'UE ?",a:"54",o:["30","42","54","67"],h:"Adoptee le 7 decembre 2000."},
+{ch:"Ch1",q:"Quel pourcentage des adultes de l'UE avaient des competences numeriques de base en 2023 ?",a:"56%",o:["43%","56%","72%","80%"],h:"L'objectif pour 2030 est de 80%."},
+{ch:"Ch1",q:"Combien de domaines de competences compte le DigComp 3.0 ?",a:"5",o:["3","5","7","10"],h:"Les domaines 4 et 5 sont transversaux."},
+{ch:"Ch1",q:"Quel pourcentage des enonces DigComp 3.0 mentionne explicitement l'IA ?",a:"14%",o:["5%","14%","30%","68%"],h:"68% y sont implicitement lies."},
+{ch:"Ch1",q:"Combien de domaines la citoyennete numerique comprend-elle au niveau C ?",a:"10",o:["5","8","10","15"],h:"Regroupes en 3 thematiques."},
+// Ch2
+{ch:"Ch2",q:"Combien de degres de fracture numerique Dagnies (2016) identifie-t-il ?",a:"8",o:["3","5","8","10"],h:"Du hardware aux contenus non traduits."},
+{ch:"Ch2",q:"Quel pourcentage du contenu numerique mondial est inaccessible (Contentsquare, 2021) ?",a:"70%",o:["30%","50%","70%","90%"],h:"Illustre par la metaphore de la soupe et des baguettes."},
+{ch:"Ch2",q:"Quel est le seuil de contraste minimum WCAG niveau AA ?",a:"4.5:1",o:["2:1","3:1","4.5:1","7:1"],h:"4 principes : perceptible, utilisable, comprehensible, robuste."},
+{ch:"Ch2",q:"Quel pourcentage de Wallons sont eloignes du numerique (Barometre 2023) ?",a:"32%",o:["18%","24%","32%","45%"],h:"Soit environ un tiers de la population."},
+{ch:"Ch2",q:"Que signifie le 'c' dans cMOOC ?",a:"Connectiviste",o:["Collaboratif","Connectiviste","Communautaire","Constructif"],h:"S'oppose au xMOOC transmissif."},
+{ch:"Ch2",q:"L'illectronisme est defini par quelle agence ?",a:"ANLCI",o:["UNESCO","ANLCI","OMS","CNIL"],h:"Agence Nationale de Lutte Contre l'Illettrisme."},
+{ch:"Ch2",q:"La fracture numerique est apparue dans quelle decennie ?",a:"Annees 1990",o:["Annees 1970","Annees 1980","Annees 1990","Annees 2000"],h:"Avec l'essor des NTIC."},
+{ch:"Ch2",q:"Les 'info-riches' vs 'info-pauvres' est une distinction de :",a:"Brotcorne & Valenduc (2009)",o:["Dagnies (2016)","Brotcorne & Valenduc (2009)","Warschauer (2003)","Ottaviani (2016)"],h:"1er degre de fracture numerique."},
+// Ch3
+{ch:"Ch3",q:"Combien de composantes de l'identite numerique Wauters a-t-il identifiees ?",a:"12",o:["8","10","12","15"],h:"De coordonnees a achats."},
+{ch:"Ch3",q:"Selon Ertzscheid (2013), combien de types de traces numeriques existe-t-il ?",a:"3",o:["2","3","4","5"],h:"Profilaires, navigationnelles, inscriptibles."},
+{ch:"Ch3",q:"Que designe la netiquette ?",a:"Conventions de bienseance en ligne",o:["Securite reseau","Conventions de bienseance en ligne","Protocole de connexion","Gestion des cookies"],h:"Contraction de NET et etiquette."},
+{ch:"Ch3",q:"L'effet bulle est cree par quoi ?",a:"Les algorithmes de recommandation",o:["Les cookies","Les algorithmes de recommandation","Le VPN","Le phishing"],h:"A force de ne voir que ce qu'on aime."},
+{ch:"Ch3",q:"Combien de limites a la liberte d'expression UNIA identifie-t-il ?",a:"6",o:["4","5","6","8"],h:"Incitation, superiorite raciale, negationnisme..."},
+{ch:"Ch3",q:"Comment s'appelle un cookie qui reste tres longtemps dans l'ordinateur ?",a:"Cookie persistant",o:["Cookie de session","Cookie persistant","Cookie tiers","Super cookie"],h:"Peut rester jusqu'a 10 ans."},
+{ch:"Ch3",q:"Selon Michel (Canoprof), que permet l'adresse IP ?",a:"D'identifier systematiquement chaque connexion",o:["De chiffrer les donnees","D'identifier systematiquement chaque connexion","De bloquer les virus","De creer un VPN"],h:"Il n'y a pas d'anonymat sur Internet."},
+// Ch4
+{ch:"Ch4",q:"Quel ransomware a paralyse le NHS britannique en 2017 ?",a:"WannaCry",o:["NotPetya","WannaCry","Stuxnet","Locky"],h:"Plus de 10 milliards de dollars de degats a l'echelle mondiale."},
+{ch:"Ch4",q:"Comment s'appelle la peur d'etre sans son telephone ?",a:"Nomophobie",o:["FOMO","Technophobie","Nomophobie","Cyberphobie"],h:"No Mobile Phone Phobia."},
+{ch:"Ch4",q:"Le NMP-Q est un questionnaire mesurant :",a:"La nomophobie",o:["Le FOMO","La nomophobie","La comparaison sociale","La cyberaddiction"],h:"No Mobile Phone Questionnaire."},
+{ch:"Ch4",q:"Le broutage est un terme issu de :",a:"L'Afrique de l'Ouest",o:["L'Amerique du Nord","L'Afrique de l'Ouest","L'Asie du Sud-Est","L'Europe de l'Est"],h:"Etudie par Adou (2022)."},
+{ch:"Ch4",q:"Le whaling cible specifiquement :",a:"Des dirigeants d'entreprise (CEO, CFO)",o:["Des employes lambda","Des dirigeants d'entreprise (CEO, CFO)","Des etudiants","Des retraites"],h:"Litteralement 'chasse a la baleine'."},
+{ch:"Ch4",q:"La theorie de la comparaison sociale est de :",a:"Festinger (1954)",o:["Freud (1910)","Festinger (1954)","Bandura (1977)","Suler (2002)"],h:"Etendue aux reseaux sociaux par Fourquet-Courbet et Courbet (2017)."},
+{ch:"Ch4",q:"Quel est le contraire du FOMO ?",a:"JOMO (Joy of Missing Out)",o:["YOLO","JOMO (Joy of Missing Out)","FOBO","ROMO"],h:"La joie de rater quelque chose."},
+{ch:"Ch4",q:"Safeonweb.be recommande un mot de passe d'au moins combien de caracteres ?",a:"13",o:["8","10","13","16"],h:"La longueur est le facteur le plus important."},
+{ch:"Ch4",q:"Le catfishing tire son nom de :",a:"Un documentaire de 2010 et une serie MTV",o:["Un roman policier","Un documentaire de 2010 et une serie MTV","Une espece de poisson","Un film d'horreur"],h:"Creer une fausse identite en ligne."},
+{ch:"Ch4",q:"Le VPN cree un :",a:"Tunnel chiffre",o:["Mur pare-feu","Tunnel chiffre","Reseau local","Serveur proxy"],h:"Virtual Private Network."},
+// Ch5
+{ch:"Ch5",q:"Le RGPD prevoit des sanctions allant jusqu'a :",a:"20 millions EUR ou 4% du CA",o:["5 millions EUR ou 1% du CA","10 millions EUR ou 2% du CA","20 millions EUR ou 4% du CA","50 millions EUR ou 10% du CA"],h:"Sanctions financieres dissuasives."},
+{ch:"Ch5",q:"Quelle est la duree de conservation du dossier patient adulte ?",a:"30 ans",o:["10 ans","20 ans","30 ans","50 ans"],h:"Apres le dernier contact."},
+{ch:"Ch5",q:"La valeur moyenne des donnees personnelles est de :",a:"17,89 EUR",o:["5,50 EUR","10,25 EUR","17,89 EUR","35,00 EUR"],h:"Une valeur economique concrete."},
+{ch:"Ch5",q:"Combien de droits fondamentaux le RGPD confere-t-il aux personnes ?",a:"8",o:["5","6","8","10"],h:"D'acces, de rectification, d'effacement..."},
+{ch:"Ch5",q:"Qui est la DPO de l'UMONS ?",a:"Mme Graciela Schiffino Pappaterra",o:["Mme Graciela Schiffino Pappaterra","M. Karim Boumazguida","Mme Sophie Lambert","M. Pierre Dupont"],h:"Contact : dpo@umons.ac.be."},
+{ch:"Ch5",q:"Le RGPD est entre en vigueur en :",a:"Mai 2018",o:["Janvier 2016","Mai 2018","Mars 2020","Janvier 2022"],h:"Directement applicable dans tous les Etats membres."},
+{ch:"Ch5",q:"Combien de principes de base du traitement le RGPD definit-il ?",a:"6",o:["4","5","6","8"],h:"Liceite, minimisation, exactitude..."},
+{ch:"Ch5",q:"La pseudonymisation rend-elle les donnees anonymes ?",a:"Non, la personne reste identifiable indirectement",o:["Oui, completement","Non, la personne reste identifiable indirectement","Seulement apres 5 ans","Ca depend du contexte"],h:"Le RGPD protege encore ces donnees."},
+// Ch6
+{ch:"Ch6",q:"L'expression 'fake news' est utilisee mondialement depuis :",a:"Fin 2016",o:["2010","Fin 2016","2018","2020"],h:"Election presidentielle americaine."},
+{ch:"Ch6",q:"Qui a diffuse des fausses nouvelles sur des pieces de monnaie dans l'Antiquite ?",a:"Octave (contre Marc-Antoine)",o:["Cesar (contre Pompee)","Octave (contre Marc-Antoine)","Alexandre (contre Darius)","Neron (contre le Senat)"],h:"Il deviendra le premier empereur romain."},
+{ch:"Ch6",q:"Combien de lois l'UNESCO propose-t-elle pour l'EMI ?",a:"5",o:["3","5","7","10"],h:"Inspirees de Ranganathan (1931)."},
+{ch:"Ch6",q:"Le CSEM a ete cree par un decret de quelle annee ?",a:"2008",o:["2002","2005","2008","2012"],h:"5 juin 2008."},
+{ch:"Ch6",q:"La mesinformation se distingue de la desinformation par :",a:"L'absence d'intention malveillante",o:["La source de l'information","L'absence d'intention malveillante","Le canal de diffusion","Le nombre de partages"],h:"La personne pense que l'info est vraie."},
+{ch:"Ch6",q:"Le deepfake est aussi appele :",a:"Hypertrucage",o:["Retouche photo","Hypertrucage","Montage video","Face swap"],h:"Defini par Dahmani (2023)."},
+{ch:"Ch6",q:"Le clickbait vise principalement a :",a:"Augmenter le trafic et les revenus publicitaires",o:["Voler des donnees","Augmenter le trafic et les revenus publicitaires","Propager des virus","Manipuler l'opinion politique"],h:"Titre provocant, contenu decevant."},
+{ch:"Ch6",q:"Les 5 lois de l'UNESCO pour l'EMI sont inspirees de :",a:"Ranganathan (1931)",o:["Dewey (1876)","Ranganathan (1931)","McLuhan (1964)","Chomsky (1988)"],h:"Lois de la bibliotheconomie."},
+{ch:"Ch6",q:"Quel pattern oculometrique a ete identifie chez les 8-13 ans par l'etude IPN/UMONS ?",a:"Pattern F et Pattern E",o:["Pattern Z","Pattern F et Pattern E","Pattern S","Pattern L"],h:"Les yeux parcourent des lignes horizontales puis descendent."},
+{ch:"Ch6",q:"La propagande est definie par :",a:"Auge (2007)",o:["Chomsky (1988)","Auge (2007)","Bernays (1928)","Interface3.Namur (2018)"],h:"Strategie de communication de masse partiale."},
+{ch:"Ch1",q:"Combien de piliers essentiels compte le niveau B de Richardson & Milovidov ?",a:"5",o:["3","5","7","9"],h:"Conditions structurelles pour la citoyennete numerique."},
+{ch:"Ch1",q:"Combien de principes directeurs la citoyennete numerique compte-t-elle ?",a:"9",o:["5","7","9","12"],h:"Contextuels, informationnels, organisationnels."},
+{ch:"Ch2",q:"Le premier degre de fracture selon Dagnies concerne :",a:"Le hardware (materiel)",o:["Le software","Le hardware (materiel)","Le reseau","Les competences"],h:"Posseder un appareil adequat."},
+{ch:"Ch3",q:"Suler (2002) identifie combien de facteurs d'identite en ligne ?",a:"5",o:["3","4","5","6"],h:"Anonymat, media, conscience..."},
+{ch:"Ch4",q:"Haferkamp et Kramer (2011) ont demontre que l'exposition a des profils attractifs sur Facebook entraine :",a:"Une evaluation negative de son propre corps",o:["Une amelioration de l'humeur","Une evaluation negative de son propre corps","Plus de creativite","Moins d'utilisation"],h:"Comparaison sociale ascendante."},
+{ch:"Ch5",q:"La 'Loi Vie privee' belge date de quelle annee ?",a:"1992",o:["1985","1992","2000","2005"],h:"Premier instrument legal belge de protection des donnees."},
+{ch:"Ch5",q:"Combien d'acteurs du RGPD distingue-t-on ?",a:"4",o:["2","3","4","5"],h:"RT, ST, DPO, personnes concernees."},
+{ch:"Ch6",q:"L'intox est definie comme un recit faux visant a :",a:"Induire en erreur ou faire du buzz",o:["Eduquer le public","Induire en erreur ou faire du buzz","Proteger une source","Promouvoir un produit"],h:"Contraire de l'information."},
+{ch:"Ch2",q:"Les 4 principes WCAG sont :",a:"Perceptible, Utilisable, Comprehensible, Robuste",o:["Perceptible, Utilisable, Comprehensible, Robuste","Accessible, Lisible, Navigable, Securise","Simple, Rapide, Beau, Fonctionnel","Fiable, Ouvert, Universel, Adaptable"],h:"Acronyme POUR en anglais."},
+{ch:"Ch3",q:"Les traces 'profilaires' d'Ertzscheid correspondent a :",a:"Ce que l'internaute dit de lui-meme (qui il est)",o:["Ce que l'internaute achete","Ce que l'internaute dit de lui-meme (qui il est)","Les sites que l'internaute visite","Les opinions que l'internaute exprime"],h:"Profil, pseudonyme, photo..."},
+{ch:"Ch4",q:"Le credential stuffing exploite quelle habitude des utilisateurs ?",a:"La reutilisation des memes mots de passe",o:["L'absence d'antivirus","La reutilisation des memes mots de passe","Le partage de fichiers","L'utilisation du WiFi public"],h:"Si un service est pirate, tous les comptes identiques sont vulnerables."},
+{ch:"Ch1",q:"Quel pourcentage des travailleurs de l'UE utilisent les TIC (2024-2025) ?",a:"92%",o:["72%","82%","92%","98%"],h:"Mais 42% manquent de competences en IA."},
+{ch:"Ch6",q:"La rumeur est definie comme une information :",a:"Non verifiee circulant de bouche a oreille",o:["Fausse et malveillante","Non verifiee circulant de bouche a oreille","Scientifique mais controversee","Politique et partiale"],h:"Bruits qui courent."},
+{ch:"Ch4",q:"Un spyware se distingue d'un virus par :",a:"Son caractere furtif (rester invisible)",o:["Sa vitesse de propagation","Son caractere furtif (rester invisible)","Sa taille en octets","Son mode de transmission"],h:"Maximiser la collecte de donnees."},
+{ch:"Ch2",q:"Quel pourcentage des menages wallons n'ont pas acces au numerique (2021) ?",a:"6%",o:["2%","6%","12%","18%"],h:"Barometre Digital Wallonia 2021."},
+{ch:"Ch5",q:"Le droit a la portabilite permet de :",a:"Recuperer ses donnees et les transmettre a un autre prestataire",o:["Supprimer toutes ses donnees","Recuperer ses donnees et les transmettre a un autre prestataire","Chiffrer ses donnees","Refuser tout traitement"],h:"Changer de streaming en emportant ses donnees."},
+{ch:"Ch3",q:"Le revenge porn consiste a :",a:"Partager des images intimes sans consentement",o:["Pirater un compte","Partager des images intimes sans consentement","Creer de faux profils","Envoyer des spam"],h:"Forme grave de cyberviolence."},
+{ch:"Ch4",q:"Chou et Edge (2012) ont montre que les utilisateurs de Facebook :",a:"Percoivent que les autres ont une vie plus heureuse",o:["Deviennent plus creatifs","Percoivent que les autres ont une vie plus heureuse","Ameliorent leurs competences sociales","Reduisent leur stress"],h:"Decalage de perception."},
+{ch:"Ch1",q:"Combien d'enonces au total contient le DigComp 3.0 ?",a:"362",o:["200","362","500","150"],h:"14% mentionnent explicitement l'IA."},
+{ch:"Ch6",q:"La theorie du complot est definie par :",a:"Fenster (1999)",o:["Giry (2019)","Fenster (1999)","Posetti (2019)","Auge (2007)"],h:"Groupe omnipotent controlant secretement l'ordre social."}
+];
+
+const LADDER=[100,200,300,500,1000,2000,4000,8000,16000,32000,64000,125000,250000,500000,1000000];
+const SAFE=[4,9,14];
+const TOTAL_Q=15;
+
+let pool,qIdx,jokers,answered,currentQ,eliminated;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function init(){showStart();}
+
+function showStart(){
+  document.getElementById('app').innerHTML=`
+    <h1>Qui veut gagner des millions ?</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique (ECN)</p>
+    <div class="start-screen">
+      <div class="start-icon">&#128176;</div>
+      <h2>Devenez millionnaire du savoir !</h2>
+      <p>15 questions de difficulte croissante, tirees parmi ${BANK.length}+ questions. 3 jokers pour vous aider !</p>
+      <ul class="rules">
+        <li>15 paliers de 100 a 1 000 000 EUR</li>
+        <li>Paliers de securite : 1 000 EUR, 32 000 EUR, 1 000 000 EUR</li>
+        <li>Joker 50:50 : elimine 2 mauvaises reponses</li>
+        <li>Joker Appel a un ami : affiche un indice</li>
+        <li>Joker Vote du public : montre les pourcentages</li>
+      </ul>
+      <button class="btn btn-gold" onclick="startGame()">Jouer !</button>
+    </div>`;
+}
+
+function startGame(){
+  pool=shuffle([...BANK]).slice(0,TOTAL_Q);
+  qIdx=0;jokers={fifty:false,friend:false,audience:false};answered=false;eliminated=[];
+  showQuestion();
+}
+
+function showQuestion(){
+  if(qIdx>=TOTAL_Q){showWin();return;}
+  currentQ=pool[qIdx];answered=false;eliminated=[];
+  render();
+}
+
+function render(){
+  const q=currentQ;
+  const opts=q.o;
+  const letters=['A','B','C','D'];
+  let ladderHtml='';
+  for(let i=TOTAL_Q-1;i>=0;i--){
+    const cls=(i===qIdx?'current':'')+(i<qIdx?' done':'')+(SAFE.includes(i)?' safe':'');
+    ladderHtml+=`<div class="ladder-step ${cls}"><span>${i+1}</span><span>${LADDER[i].toLocaleString()} EUR</span></div>`;
+  }
+  let optsHtml=opts.map((o,i)=>{
+    const elim=eliminated.includes(i)?'eliminated':'';
+    return `<button class="opt-btn ${elim}" id="opt-${i}" onclick="answer(${i})" ${answered?'disabled':''}><span class="letter">${letters[i]}</span>${o}</button>`;
+  }).join('');
+
+  document.getElementById('app').innerHTML=`
+    <h1>Qui veut gagner des millions ?</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <div class="game-layout">
+      <div class="main-area">
+        <div class="question-card">
+          <span class="ch-badge">${q.ch}</span>
+          <div class="q-text">${q.q}</div>
+          <div class="jokers">
+            <button class="joker-btn ${jokers.fifty?'used':''}" onclick="useFifty()" ${jokers.fifty||answered?'disabled':''}>50:50</button>
+            <button class="joker-btn ${jokers.friend?'used':''}" onclick="useFriend()" ${jokers.friend||answered?'disabled':''}>&#128222; Ami</button>
+            <button class="joker-btn ${jokers.audience?'used':''}" onclick="useAudience()" ${jokers.audience||answered?'disabled':''}>&#128101; Public</button>
+          </div>
+          <div class="options">${optsHtml}</div>
+          <div id="extra"></div>
+        </div>
+      </div>
+      <div class="ladder">${ladderHtml}</div>
+    </div>`;
+}
+
+function answer(i){
+  if(answered)return;
+  answered=true;
+  const q=currentQ;
+  const correct=q.o[i]===q.a;
+  const correctIdx=q.o.indexOf(q.a);
+  document.querySelectorAll('.opt-btn').forEach(b=>b.disabled=true);
+  document.getElementById('opt-'+correctIdx).classList.add('correct');
+  if(!correct)document.getElementById('opt-'+i).classList.add('wrong');
+
+  const extra=document.getElementById('extra');
+  if(correct){
+    extra.innerHTML=`<div class="feedback correct">Bonne reponse ! Vous gagnez ${LADDER[qIdx].toLocaleString()} EUR</div>
+      <div class="btn-row"><button class="btn btn-gold" onclick="qIdx++;showQuestion()">Question suivante &rarr;</button></div>`;
+  } else {
+    let safe=0;
+    for(let s of SAFE){if(s<qIdx)safe=LADDER[s];}
+    extra.innerHTML=`<div class="feedback wrong">Mauvaise reponse ! La bonne reponse etait : ${q.a}<br>Vous repartez avec ${safe.toLocaleString()} EUR</div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="init()">&#128260; Rejouer</button></div>`;
+  }
+}
+
+function useFifty(){
+  if(jokers.fifty||answered)return;
+  jokers.fifty=true;
+  const q=currentQ;
+  const correctIdx=q.o.indexOf(q.a);
+  let wrong=q.o.map((_,i)=>i).filter(i=>i!==correctIdx);
+  shuffle(wrong);
+  eliminated=[wrong[0],wrong[1]];
+  render();
+}
+
+function useFriend(){
+  if(jokers.friend||answered)return;
+  jokers.friend=true;
+  render();
+  setTimeout(()=>{
+    document.getElementById('extra').innerHTML=`<div class="hint-box">&#128222; <strong>Votre ami dit :</strong> "${currentQ.h}"</div>`;
+  },100);
+}
+
+function useAudience(){
+  if(jokers.audience||answered)return;
+  jokers.audience=true;
+  const q=currentQ;
+  const correctIdx=q.o.indexOf(q.a);
+  let pcts=q.o.map((_,i)=>{
+    if(eliminated.includes(i))return 0;
+    return i===correctIdx?45+Math.floor(Math.random()*25):5+Math.floor(Math.random()*15);
+  });
+  const total=pcts.reduce((a,b)=>a+b,0);
+  pcts=pcts.map(p=>Math.round(p/total*100));
+  const letters=['A','B','C','D'];
+  render();
+  setTimeout(()=>{
+    let barsHtml=q.o.map((o,i)=>`<div class="audience-bar"><span>${letters[i]}</span><div class="bar"><div class="bar-fill" style="width:${pcts[i]}%"></div></div><span class="pct">${pcts[i]}%</span></div>`).join('');
+    document.getElementById('extra').innerHTML=`<div class="audience-box">&#128101; <strong>Vote du public :</strong>${barsHtml}</div>`;
+  },100);
+}
+
+function showWin(){
+  document.getElementById('app').innerHTML=`
+    <h1>Qui veut gagner des millions ?</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <div class="results-card">
+      <h2>Felicitations !</h2>
+      <div class="final-score">1 000 000 EUR</div>
+      <div class="final-sub">Vous avez repondu correctement aux 15 questions !</div>
+      <div class="btn-row"><button class="btn btn-gold" onclick="init()">&#128260; Rejouer</button></div>
+    </div>`;
+}
+
+init();
+</script>
+</body>
+</html>

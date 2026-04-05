@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tri Express - ECN</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f1117;--card:#1a1d27;--card2:#232635;--accent:#6c63ff;--accent2:#ff6584;--green:#2ecc71;--red:#e74c3c;--text:#e0e0e8;--muted:#8888a0;--border:#2a2d3e;--radius:12px;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px;line-height:1.6;}
+h1{font-size:1.8rem;margin-bottom:4px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.subtitle{color:var(--muted);font-size:.9rem;margin-bottom:20px;}
+.container{max-width:800px;width:100%;}
+.score-badge{position:fixed;top:16px;right:20px;background:var(--card);border:1px solid var(--border);padding:8px 18px;border-radius:99px;font-weight:600;font-size:.95rem;z-index:10;}
+.score-badge span{color:var(--accent);}
+.progress-wrap{width:100%;margin-bottom:18px;}
+.progress-info{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);margin-bottom:6px;}
+.progress-bar{height:8px;background:var(--card2);border-radius:99px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .5s ease;}
+.level-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;position:relative;overflow:hidden;}
+.level-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.ch-badge{display:inline-block;background:var(--accent);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:99px;margin-bottom:8px;font-weight:700;}
+.level-title{font-size:1.1rem;font-weight:700;margin-bottom:16px;}
+.categories{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;justify-content:center;}
+.cat-zone{flex:1;min-width:140px;max-width:300px;background:var(--card2);border:2px dashed var(--border);border-radius:var(--radius);padding:12px;min-height:120px;transition:all .3s;}
+.cat-zone.over{border-color:var(--accent);background:rgba(108,99,255,.1);}
+.cat-zone h3{font-size:.85rem;color:var(--accent);text-align:center;margin-bottom:10px;}
+.cat-zone .dropped{padding:6px 10px;background:var(--card);border-radius:6px;font-size:.82rem;margin-bottom:4px;animation:popIn .3s ease;}
+.items-pool{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px;}
+.item-chip{padding:8px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:.88rem;cursor:grab;transition:all .2s;user-select:none;}
+.item-chip:hover{border-color:var(--accent);transform:translateY(-2px);}
+.item-chip.dragging{opacity:.4;}
+.item-chip.placed{opacity:.3;cursor:default;pointer-events:none;}
+.btn{padding:10px 22px;border:none;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{filter:brightness(1.15);transform:translateY(-1px);}
+.btn-secondary{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+.btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center;}
+.feedback{padding:14px 18px;border-radius:8px;margin-top:14px;font-weight:600;animation:popIn .35s ease;}
+.feedback.correct{background:rgba(46,204,113,.15);border:1px solid var(--green);color:var(--green);}
+.feedback.wrong{background:rgba(231,76,60,.15);border:1px solid var(--red);color:var(--red);}
+@keyframes popIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.results-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;margin-bottom:16px;}
+.results-card h2{text-align:center;margin-bottom:6px;}
+.final-score{text-align:center;font-size:2.8rem;font-weight:800;margin:10px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.final-sub{text-align:center;color:var(--muted);margin-bottom:20px;}
+.start-screen{text-align:center;padding:40px 20px;}
+.start-screen p{color:var(--muted);max-width:500px;margin:14px auto;}
+.start-icon{font-size:4rem;margin-bottom:10px;}
+.rules{text-align:left;background:var(--card2);border-radius:8px;padding:16px 20px;margin:18px 0;font-size:.9rem;color:var(--muted);}
+.rules li{margin-bottom:4px;list-style:disc inside;}
+.correction-item{padding:8px 12px;background:var(--card2);border-radius:6px;margin-bottom:4px;font-size:.85rem;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.corr-ok{color:var(--green)}.corr-ko{color:var(--red)}
+/* Mobile tap select */
+.item-chip.selected{border-color:var(--accent2);background:rgba(255,101,132,.15);}
+@media(max-width:600px){
+  body{padding:12px;}
+  .level-card{padding:16px 12px;}
+  .score-badge{position:static;margin-bottom:12px;text-align:center;}
+  .categories{flex-direction:column;}
+  .cat-zone{max-width:100%;}
+}
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script>
+const LEVELS=[
+{ch:"Ch1",title:"Numerique vs Digital",cats:["Numerique","Digital"],items:[
+{t:"Langage binaire (0 et 1)",c:"Numerique"},{t:"Experience utilisateur",c:"Digital"},{t:"TIC (Technologies de l'Information)",c:"Numerique"},{t:"Systemes binaires et reseaux",c:"Numerique"},{t:"Usages et interactions",c:"Digital"},{t:"Infrastructures techniques",c:"Numerique"},{t:"Ressenti de l'utilisateur",c:"Digital"},{t:"Codage et programmation",c:"Numerique"},{t:"Interface tactile intuitive",c:"Digital"},{t:"Algorithmes de traitement",c:"Numerique"}
+]},
+{ch:"Ch3",title:"Trace active vs Trace passive",cats:["Trace active","Trace passive"],items:[
+{t:"Publier un post sur Instagram",c:"Trace active"},{t:"Cookie de suivi publicitaire",c:"Trace passive"},{t:"Remplir un formulaire en ligne",c:"Trace active"},{t:"Geolocalisation automatique",c:"Trace passive"},{t:"Commenter un article",c:"Trace active"},{t:"Adresse IP enregistree par un serveur",c:"Trace passive"},{t:"Partager une photo volontairement",c:"Trace active"},{t:"Historique de navigation collecte par le FAI",c:"Trace passive"},{t:"Liker une page Facebook",c:"Trace active"},{t:"Profilage par algorithme de recommandation",c:"Trace passive"},{t:"Poster un avis sur Google",c:"Trace active"},{t:"Donnees de localisation GPS silencieuses",c:"Trace passive"}
+]},
+{ch:"Ch2",title:"xMOOC vs cMOOC",cats:["xMOOC","cMOOC"],items:[
+{t:"Transmissif (cours magistraux video)",c:"xMOOC"},{t:"Connectiviste (co-construction)",c:"cMOOC"},{t:"Videos descendantes du professeur",c:"xMOOC"},{t:"Interactions et echanges entre pairs",c:"cMOOC"},{t:"QCM automatises",c:"xMOOC"},{t:"Production collaborative de contenus",c:"cMOOC"},{t:"Certification standardisee",c:"xMOOC"},{t:"Apprentissage en reseau",c:"cMOOC"},{t:"Progression lineaire predeterminee",c:"xMOOC"},{t:"Emergent et adaptatif",c:"cMOOC"}
+]},
+{ch:"Ch5",title:"Donnees personnelles vs Donnees sensibles",cats:["Donnees personnelles","Donnees sensibles"],items:[
+{t:"Nom et prenom",c:"Donnees personnelles"},{t:"Adresse email",c:"Donnees personnelles"},{t:"Opinions politiques",c:"Donnees sensibles"},{t:"Orientation sexuelle",c:"Donnees sensibles"},{t:"Numero de telephone",c:"Donnees personnelles"},{t:"Convictions religieuses",c:"Donnees sensibles"},{t:"Adresse postale",c:"Donnees personnelles"},{t:"Donnees de sante mentale",c:"Donnees sensibles"},{t:"Date de naissance",c:"Donnees personnelles"},{t:"Origine ethnique",c:"Donnees sensibles"},{t:"Affiliation syndicale",c:"Donnees sensibles"},{t:"Code postal",c:"Donnees personnelles"}
+]},
+{ch:"Ch4",title:"Type de cyberattaque par canal",cats:["Phishing (email)","Smishing (SMS)","Vishing (voix)","Quishing (QR code)"],items:[
+{t:"Faux courriel de votre banque",c:"Phishing (email)"},{t:"SMS urgent de livraison colis",c:"Smishing (SMS)"},{t:"Appel se faisant passer pour PayPal",c:"Vishing (voix)"},{t:"QR code sur une fausse affiche officielle",c:"Quishing (QR code)"},{t:"Email avec lien vers site contrefait",c:"Phishing (email)"},{t:"Message WhatsApp avec lien suspect",c:"Smishing (SMS)"},{t:"Appel du 'support technique Microsoft'",c:"Vishing (voix)"},{t:"QR code colle sur un parcmetre",c:"Quishing (QR code)"},{t:"Courriel d'arnaque au president",c:"Phishing (email)"},{t:"SMS de fausse amende routiere",c:"Smishing (SMS)"},{t:"Appel pretendant etre la police",c:"Vishing (voix)"},{t:"QR code dans un faux courriel officiel",c:"Quishing (QR code)"}
+]},
+{ch:"Ch4",title:"FOMO vs Nomophobie",cats:["FOMO","Nomophobie"],items:[
+{t:"Peur de rater un evenement important",c:"FOMO"},{t:"Peur d'etre separe de son telephone",c:"Nomophobie"},{t:"Verifier constamment les reseaux sociaux",c:"FOMO"},{t:"Panique quand la batterie est a 5%",c:"Nomophobie"},{t:"JOMO (Joy of Missing Out) est mon contraire",c:"FOMO"},{t:"Questionnaire NMP-Q",c:"Nomophobie"},{t:"Sentiment d'exclusion sociale",c:"FOMO"},{t:"Anxiete sans connexion reseau",c:"Nomophobie"},{t:"Scroller compulsivement avant de dormir",c:"FOMO"},{t:"Revenir chercher son tel oublie a la maison",c:"Nomophobie"}
+]},
+{ch:"Ch3",title:"Cyberviolence vs Cyberharcelement",cats:["Cyberviolence","Cyberharcelement"],items:[
+{t:"Acte ponctuel et isole",c:"Cyberviolence"},{t:"Comportement repete et persistant",c:"Cyberharcelement"},{t:"Insulte unique dans un commentaire",c:"Cyberviolence"},{t:"Messages mena\u00e7ants quotidiens pendant des semaines",c:"Cyberharcelement"},{t:"Partage non consenti d'une photo (une fois)",c:"Cyberviolence"},{t:"Campagne de denigrement organisee",c:"Cyberharcelement"},{t:"Happy slapping (agression filmee)",c:"Cyberviolence"},{t:"Exclusion systematique d'un groupe en ligne",c:"Cyberharcelement"},{t:"Doxing (divulgation ponctuelle de donnees)",c:"Cyberviolence"},{t:"Trolling persistant sur tous les posts",c:"Cyberharcelement"}
+]},
+{ch:"Ch1",title:"Domaines DigComp 3.0 (1 a 5)",cats:["Domaine 1: Information","Domaine 2: Communication","Domaine 3: Creation","Domaine 4: Securite","Domaine 5: Resolution"],items:[
+{t:"Navigation, recherche et filtrage",c:"Domaine 1: Information"},{t:"Evaluation de l'information",c:"Domaine 1: Information"},{t:"Interagir via les technologies",c:"Domaine 2: Communication"},{t:"Gestion de l'identite numerique",c:"Domaine 2: Communication"},{t:"Developpement de contenus numeriques",c:"Domaine 3: Creation"},{t:"Droits d'auteur et licences",c:"Domaine 3: Creation"},{t:"Protection des appareils",c:"Domaine 4: Securite"},{t:"Protection des donnees personnelles",c:"Domaine 4: Securite"},{t:"Identification des besoins technologiques",c:"Domaine 5: Resolution"},{t:"Utilisation creative du numerique",c:"Domaine 5: Resolution"},{t:"Partager via les technologies",c:"Domaine 2: Communication"},{t:"Programmation",c:"Domaine 3: Creation"},{t:"Protection de la sante",c:"Domaine 4: Securite"},{t:"Gestion de l'information",c:"Domaine 1: Information"},{t:"Collaboration numerique",c:"Domaine 2: Communication"}
+]}
+];
+
+let lvlIdx,score,totalItems,correctCount,placements,selectedItem;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function init(){
+  lvlIdx=0;score=0;totalItems=0;correctCount=0;
+  LEVELS.forEach(l=>totalItems+=l.items.length);
+  showStart();
+}
+
+function showStart(){
+  document.getElementById('app').innerHTML=`
+    <h1>Tri Express</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique (ECN)</p>
+    <div class="start-screen">
+      <div class="start-icon">&#128230;</div>
+      <h2>Trie les elements !</h2>
+      <p>Glisse (ou clique) chaque element dans la bonne categorie. ${LEVELS.length} niveaux progressifs !</p>
+      <ul class="rules">
+        <li>${LEVELS.length} niveaux couvrant tous les chapitres</li>
+        <li>${totalItems} elements au total a trier</li>
+        <li>Glisse-deposer ou clic pour selectionner + clic sur categorie</li>
+        <li>+1 point par element correctement place</li>
+      </ul>
+      <button class="btn btn-primary" onclick="startGame()">Commencer</button>
+    </div>`;
+}
+
+function startGame(){lvlIdx=0;score=0;correctCount=0;nextLevel();}
+
+function nextLevel(){
+  if(lvlIdx>=LEVELS.length){showResults();return;}
+  placements={};selectedItem=null;
+  renderLevel();
+}
+
+function renderLevel(){
+  const lv=LEVELS[lvlIdx];
+  const pct=(lvlIdx/LEVELS.length*100).toFixed(0);
+  const shuffledItems=shuffle([...lv.items]);
+  let catsHtml=lv.cats.map(c=>`<div class="cat-zone" data-cat="${c}" ondragover="ev(event)" ondrop="drop(event,'${c.replace(/'/g,"\\'")}')" onclick="catClick('${c.replace(/'/g,"\\'")}')"><h3>${c}</h3><div class="drop-area" id="drop-${c.replace(/[^a-zA-Z0-9]/g,'')}"></div></div>`).join('');
+  let itemsHtml=shuffledItems.map((it,i)=>`<div class="item-chip" draggable="true" ondragstart="ds(event,${i})" onclick="itemClick(${i})" data-idx="${i}" id="chip-${i}">${it.t}</div>`).join('');
+
+  document.getElementById('app').innerHTML=`
+    <h1>Tri Express</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <div class="score-badge">Score : <span>${score}</span></div>
+    <div class="progress-wrap">
+      <div class="progress-info"><span>Niveau ${lvlIdx+1}/${LEVELS.length}</span><span>${pct}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="level-card">
+      <span class="ch-badge">${lv.ch}</span>
+      <div class="level-title">${lv.title}</div>
+      <div class="items-pool" id="pool">${itemsHtml}</div>
+      <div class="categories">${catsHtml}</div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="validateLevel()">Valider</button></div>
+      <div id="fb"></div>
+    </div>`;
+  window._items=shuffledItems;
+}
+
+function ev(e){e.preventDefault();e.currentTarget.classList.add('over');}
+function ds(e,i){e.dataTransfer.setData('text',i);document.getElementById('chip-'+i).classList.add('dragging');}
+function drop(e,cat){
+  e.preventDefault();e.currentTarget.classList.remove('over');
+  const i=parseInt(e.dataTransfer.getData('text'));
+  placeItem(i,cat);
+}
+function itemClick(i){
+  if(document.getElementById('chip-'+i).classList.contains('placed'))return;
+  document.querySelectorAll('.item-chip.selected').forEach(el=>el.classList.remove('selected'));
+  document.getElementById('chip-'+i).classList.add('selected');
+  selectedItem=i;
+}
+function catClick(cat){
+  if(selectedItem===null)return;
+  placeItem(selectedItem,cat);
+  selectedItem=null;
+}
+function placeItem(i,cat){
+  const chip=document.getElementById('chip-'+i);
+  if(!chip||chip.classList.contains('placed'))return;
+  chip.classList.add('placed');
+  chip.classList.remove('dragging','selected');
+  placements[i]=cat;
+  const dropId='drop-'+cat.replace(/[^a-zA-Z0-9]/g,'');
+  const area=document.getElementById(dropId);
+  if(area){
+    const d=document.createElement('div');
+    d.className='dropped';
+    d.textContent=window._items[i].t;
+    d.dataset.idx=i;
+    area.appendChild(d);
+  }
+}
+
+function validateLevel(){
+  const lv=LEVELS[lvlIdx];
+  const items=window._items;
+  let correct=0,total=items.length,corrections=[];
+  items.forEach((it,i)=>{
+    const placed=placements[i]||'(non place)';
+    const ok=placed===it.c;
+    if(ok){correct++;score++;}
+    corrections.push({t:it.t,placed,expected:it.c,ok});
+  });
+  correctCount+=correct;
+  let corrHtml=corrections.map(c=>`<div class="correction-item"><span>${c.t}</span><span class="${c.ok?'corr-ok':'corr-ko'}">${c.ok?'Correct':c.expected}</span></div>`).join('');
+  document.getElementById('fb').innerHTML=`
+    <div class="feedback ${correct===total?'correct':'wrong'}">
+      ${correct}/${total} correct(s) a ce niveau
+    </div>
+    <div style="margin-top:12px">${corrHtml}</div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="lvlIdx++;nextLevel()">Niveau suivant &rarr;</button></div>`;
+  // disable pool
+  document.querySelectorAll('.item-chip').forEach(c=>{c.style.pointerEvents='none';});
+  document.querySelector('.btn-row').style.display='none';
+}
+
+function showResults(){
+  const pct=(score/totalItems*100).toFixed(0);
+  document.getElementById('app').innerHTML=`
+    <h1>Tri Express</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <div class="results-card">
+      <h2>Resultats finaux</h2>
+      <div class="final-score">${score} / ${totalItems}</div>
+      <div class="final-sub">${pct}% de reussite sur ${LEVELS.length} niveaux</div>
+      <div class="btn-row" style="justify-content:center">
+        <button class="btn btn-primary" onclick="init()">&#128260; Rejouer</button>
+      </div>
+    </div>`;
+}
+
+init();
+</script>
+</body>
+</html>

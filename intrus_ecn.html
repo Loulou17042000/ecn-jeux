@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trouve l'intrus - ECN</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f1117;--card:#1a1d27;--card2:#232635;--accent:#6c63ff;--accent2:#ff6584;--green:#2ecc71;--red:#e74c3c;--text:#e0e0e8;--muted:#8888a0;--border:#2a2d3e;--radius:12px;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px;line-height:1.6;}
+h1{font-size:1.8rem;margin-bottom:4px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.subtitle{color:var(--muted);font-size:.9rem;margin-bottom:20px;}
+.container{max-width:700px;width:100%;}
+.score-badge{position:fixed;top:16px;right:20px;background:var(--card);border:1px solid var(--border);padding:8px 18px;border-radius:99px;font-weight:600;font-size:.95rem;z-index:10;}
+.score-badge span{color:var(--accent);}
+.progress-wrap{width:100%;margin-bottom:18px;}
+.progress-info{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);margin-bottom:6px;}
+.progress-bar{height:8px;background:var(--card2);border-radius:99px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .5s ease;}
+.q-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;margin-bottom:16px;position:relative;overflow:hidden;}
+.q-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.ch-badge{display:inline-block;background:var(--accent);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:99px;margin-bottom:10px;font-weight:700;}
+.q-title{font-size:1.05rem;font-weight:600;margin-bottom:6px;}
+.q-desc{color:var(--muted);font-size:.9rem;margin-bottom:18px;}
+.items{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;justify-content:center;}
+.item-btn{padding:14px 20px;border-radius:var(--radius);border:2px solid var(--border);background:var(--card2);color:var(--text);font-size:.95rem;font-weight:600;cursor:pointer;transition:all .3s;min-width:120px;text-align:center;}
+.item-btn:hover:not(:disabled){border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 15px rgba(108,99,255,.2);}
+.item-btn.intrus{border-color:var(--green);background:rgba(46,204,113,.15);color:var(--green);animation:popIn .3s ease;}
+.item-btn.wrong-pick{border-color:var(--red);background:rgba(231,76,60,.15);color:var(--red);}
+.item-btn.normal{opacity:.5;}
+.item-btn:disabled{cursor:not-allowed;}
+.feedback{padding:14px 18px;border-radius:8px;margin-top:14px;font-weight:600;animation:popIn .35s ease;}
+.feedback.correct{background:rgba(46,204,113,.15);border:1px solid var(--green);color:var(--green);}
+.feedback.wrong{background:rgba(231,76,60,.15);border:1px solid var(--red);color:var(--red);}
+.explanation{color:var(--muted);font-size:.88rem;margin-top:8px;font-style:italic;}
+@keyframes popIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.btn{padding:10px 22px;border:none;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{filter:brightness(1.15);}
+.btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center;}
+.results-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;}
+.results-card h2{text-align:center;margin-bottom:6px;}
+.final-score{text-align:center;font-size:2.8rem;font-weight:800;margin:10px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.final-sub{text-align:center;color:var(--muted);margin-bottom:20px;}
+.start-screen{text-align:center;padding:40px 20px;}
+.start-screen p{color:var(--muted);max-width:500px;margin:14px auto;}
+.start-icon{font-size:4rem;margin-bottom:10px;}
+.rules{text-align:left;background:var(--card2);border-radius:8px;padding:16px 20px;margin:18px 0;font-size:.9rem;color:var(--muted);}
+.rules li{margin-bottom:4px;list-style:disc inside;}
+.review-item{padding:10px 14px;background:var(--card2);border-radius:8px;margin-bottom:6px;font-size:.88rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;}
+.ri-ok{color:var(--green)}.ri-ko{color:var(--red)}
+@media(max-width:500px){
+  body{padding:12px;}
+  .q-card{padding:18px 16px;}
+  .score-badge{position:static;margin-bottom:12px;text-align:center;}
+  .item-btn{min-width:90px;padding:10px 14px;font-size:.85rem;}
+}
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script>
+const QUESTIONS=[
+{ch:"Ch1",title:"Domaines DigComp 3.0",items:["Information","Communication","Creation de contenus","Securite","Accessibilite"],intrus:"Accessibilite",explain:"Le 5e domaine est 'Resolution de problemes', pas 'Accessibilite'."},
+{ch:"Ch1",title:"Principes WCAG",items:["Perceptible","Utilisable","Comprehensible","Accessible","Robuste"],intrus:"Accessible",explain:"Le 4e principe est 'Robuste', pas 'Accessible'. WCAG = POUR (Perceivable, Operable, Understandable, Robust)."},
+{ch:"Ch1",title:"Dimensions de la citoyennete (Hadyeh et al., 2017)",items:["Politique","Sociale","Culturelle","Technologique","Economique"],intrus:"Technologique",explain:"Les 4 dimensions sont : politique, sociale, culturelle et economique. 'Technologique' n'en fait pas partie."},
+{ch:"Ch1",title:"Niveaux du modele Richardson & Milovidov (2020)",items:["Niveau A","Niveau B","Niveau C","Niveau D"],intrus:"Niveau D",explain:"Le modele comporte 3 niveaux : A (competences), B (piliers et principes), C (domaines). Il n'y a pas de niveau D."},
+{ch:"Ch1",title:"Thematiques du niveau C (10 domaines)",items:["Etre en ligne","Bien-etre en ligne","Mes droits en ligne","Securite en ligne"],intrus:"Securite en ligne",explain:"Les 3 thematiques sont : Etre en ligne, Bien-etre en ligne, Mes droits en ligne. 'Securite en ligne' n'est pas une thematique distincte."},
+{ch:"Ch2",title:"3 degres classiques de fracture numerique",items:["Inegalites d'acces","Inegalites d'usage","Inegalites de revenus","Inegalites d'implications sociales"],intrus:"Inegalites de revenus",explain:"Les 3 degres sont : acces, usage, implications sociales. Les revenus sont un facteur mais pas un degre a part entiere."},
+{ch:"Ch2",title:"Competences numeriques (Ottaviani, 2016)",items:["Instrumentales","Informationnelles","Strategiques","Relationnelles"],intrus:"Relationnelles",explain:"Les 3 categories sont : instrumentales, informationnelles et strategiques. 'Relationnelles' n'existe pas dans cette typologie."},
+{ch:"Ch2",title:"Populations touchees par la fracture numerique",items:["Personnes agees","Faible niveau d'etudes","Faible revenu","Hommes de 25-35 ans"],intrus:"Hommes de 25-35 ans",explain:"Les populations les plus touchees sont les personnes agees, avec faible niveau d'etudes et faible revenu."},
+{ch:"Ch2",title:"Degres de fracture (Dagnies, 2016)",items:["Hardware","Software","Reseau","Esthetique","Competences instrumentales"],intrus:"Esthetique",explain:"L'esthetique n'est pas un degre. Les 8 degres incluent hardware, software, reseau, competences..."},
+{ch:"Ch3",title:"Types de traces (Ertzscheid, 2013)",items:["Profilaires","Navigationnelles","Inscriptibles","Emotionnelles"],intrus:"Emotionnelles",explain:"Les 3 types sont : profilaires (qui je suis), navigationnelles (comment je me comporte), inscriptibles (ce que je pense)."},
+{ch:"Ch3",title:"Composantes identite numerique (Wauters)",items:["Avatar","Reputation","Coordonnees","Empreinte carbone","Reseau"],intrus:"Empreinte carbone",explain:"L'empreinte carbone ne fait pas partie des 12 composantes de l'identite numerique."},
+{ch:"Ch3",title:"Regles de la netiquette (Kaspersky)",items:["Memes regles qu'en vrai","Se montrer sous son meilleur jour","Toujours utiliser des emojis","Respecter la vie privee","Attention a la grammaire"],intrus:"Toujours utiliser des emojis",explain:"L'usage systematique d'emojis n'est pas une regle de la netiquette."},
+{ch:"Ch3",title:"Limites a la liberte d'expression (UNIA)",items:["Incitation a la discrimination","Negationnisme","Superiorite raciale","Critique litteraire","Injures ecrites"],intrus:"Critique litteraire",explain:"La critique litteraire est protegee par la liberte d'expression."},
+{ch:"Ch4",title:"Types de cyberattaques",items:["Phishing","Vishing","Smishing","Scrolling","Quishing"],intrus:"Scrolling",explain:"Le scrolling (defiler sur l'ecran) n'est pas une cyberattaque. Les 4 autres sont des variantes d'hameconnage."},
+{ch:"Ch4",title:"Bonnes pratiques de securite numerique",items:["Mises a jour","Antivirus","Partager ses mots de passe","Limiter les applications","Sensibilisation"],intrus:"Partager ses mots de passe",explain:"Il ne faut JAMAIS partager ses mots de passe. C'est le contraire d'une bonne pratique."},
+{ch:"Ch4",title:"Fonctions d'un VPN (Kaspersky)",items:["Masquer l'adresse IP","Chiffrer les donnees","Supprimer les virus","Contourner les restrictions geographiques"],intrus:"Supprimer les virus",explain:"Un VPN ne protege PAS contre les malwares. Il chiffre le trafic et masque l'IP."},
+{ch:"Ch4",title:"Consequences du FOMO",items:["Verification constante des reseaux","Sentiment d'exclusion","Amelioration de la concentration","Scroller compulsivement"],intrus:"Amelioration de la concentration",explain:"Le FOMO nuit a la concentration, il ne l'ameliore pas."},
+{ch:"Ch4",title:"Risques des objets connectes (CSEM, 2022)",items:["Collecte de donnees vocales","Prise de controle a distance","Absence de chiffrement","Amelioration de la vie privee"],intrus:"Amelioration de la vie privee",explain:"Les objets connectes menacent la vie privee, ils ne l'ameliorent pas."},
+{ch:"Ch5",title:"Droits RGPD",items:["Acces","Rectification","Suppression","Publication","Portabilite"],intrus:"Publication",explain:"Le 'droit de publication' n'existe pas dans le RGPD. Les droits incluent acces, rectification, effacement, portabilite, etc."},
+{ch:"Ch5",title:"Donnees sensibles au sens du RGPD",items:["Opinions politiques","Orientation sexuelle","Couleur preferee","Donnees de sante","Convictions religieuses"],intrus:"Couleur preferee",explain:"La couleur preferee n'est pas une donnee sensible au sens du RGPD."},
+{ch:"Ch5",title:"Principes de base du traitement RGPD",items:["Liceite","Minimisation","Exactitude","Rentabilite","Integrite et confidentialite"],intrus:"Rentabilite",explain:"La rentabilite n'est pas un principe du RGPD. Les 6 principes sont : liceite, limitation finalites, minimisation, exactitude, conservation limitee, integrite/confidentialite."},
+{ch:"Ch5",title:"Acteurs du RGPD",items:["Responsable du traitement","Sous-traitant","DPO","Journaliste","Personne concernee"],intrus:"Journaliste",explain:"Les 4 acteurs du RGPD sont : RT, sous-traitant, DPO et personnes concernees."},
+{ch:"Ch6",title:"Formes de fausses informations",items:["Mesinformation","Desinformation","Fake news","Notification push","Rumeur"],intrus:"Notification push",explain:"La notification push est un outil technique, pas une forme de fausse information."},
+{ch:"Ch6",title:"Motivations des fake news",items:["Argent","Ideologie politique","Humour","Education scientifique"],intrus:"Education scientifique",explain:"Les 3 motivations sont : argent, ideologie/politique et humour."},
+{ch:"Ch6",title:"5 conseils pour reperer les fake news",items:["Observer les details","Verifier la source","Varier les sources","Decrypter les images","Partager immediatement"],intrus:"Partager immediatement",explain:"Il ne faut jamais partager une info non verifiee. Le 5e conseil est de verifier l'origine des photos/videos."},
+{ch:"Ch6",title:"Missions du CSEM",items:["Promouvoir l'EMI","Favoriser les echanges","Lutter contre les stereotypes","Vendre des logiciels","Formuler des avis"],intrus:"Vendre des logiciels",explain:"Le CSEM ne vend pas de logiciels. Il promeut, favorise, lutte contre les stereotypes et formule des avis."},
+{ch:"Ch6",title:"Types de moteurs de recherche",items:["Ecologiques","Caritatifs","Pour enfants","Gouvernementaux secrets","Axes confidentialite"],intrus:"Gouvernementaux secrets",explain:"Les categories sont : ecologiques, caritatifs, pour enfants, axes confidentialite et generalistes."},
+{ch:"Ch3",title:"Dangers en ligne pour les jeunes",items:["Grooming","Cyberharclement","Revenge porn","Cours en ligne","Happy slapping"],intrus:"Cours en ligne",explain:"Les cours en ligne ne sont pas un danger. Grooming, cyberharcelement, revenge porn et happy slapping le sont."},
+{ch:"Ch4",title:"Formes d'escroquerie en ligne",items:["Broutage","Catfishing","Romance scam","E-banking securise","Fausse convocation judiciaire"],intrus:"E-banking securise",explain:"Le e-banking securise n'est pas une escroquerie. Les autres sont des formes de cybercriminalite."},
+{ch:"Ch1",title:"Droits du citoyen (Schnapper, 2000)",items:["Droits politiques","Droits civils","Droits religieux","Droit de vote"],intrus:"Droits religieux",explain:"Schnapper distingue droits politiques et droits civils. Les 'droits religieux' ne sont pas une categorie."},
+{ch:"Ch2",title:"Statistiques Barometre Digital Wallonia 2021",items:["6% sans acces numerique","18% maturite insuffisante","32% eloignes du numerique","75% experts numeriques"],intrus:"75% experts numeriques",explain:"Les chiffres reels sont 6%, 18% et 32%. 75% d'experts est invente."},
+{ch:"Ch5",title:"Lois de protection des donnees (chronologie)",items:["Loi Vie privee (1992)","Directive 95/46/CE (1995)","RGPD (2018)","Loi numerique (1975)"],intrus:"Loi numerique (1975)",explain:"La Loi numerique (1975) n'existe pas. Les jalons sont : 1992 (Loi Vie privee), 1995 (Directive), 2018 (RGPD)."},
+{ch:"Ch6",title:"Lois UNESCO pour l'EMI",items:["Egalite des moyens d'information","Chaque citoyen est createur","Non-neutralite de l'info","L'info doit etre censurable","Processus continu"],intrus:"L'info doit etre censurable",explain:"La 4e loi parle du besoin universel d'information, pas de censure."},
+{ch:"Ch4",title:"Recommandations Safeonweb.be pour mots de passe",items:["Activer le 2FA","Mots de passe differents","Gestionnaire de mots de passe","Ecrire sur un post-it","Au moins 13 caracteres"],intrus:"Ecrire sur un post-it",explain:"Ecrire son mot de passe sur un post-it est une tres mauvaise pratique de securite !"},
+{ch:"Ch3",title:"Moyens de proteger son identite numerique",items:["Navigation privee","VPN","Gestion des cookies","Publier toutes ses infos","Verifier les permissions"],intrus:"Publier toutes ses infos",explain:"Publier toutes ses informations compromet l'identite numerique au lieu de la proteger."},
+{ch:"Ch1",title:"Chapitres du cours ECN",items:["Citoyennete numerique","Inclusion et accessibilite","Identite numerique","Programmation avancee","Securite numerique"],intrus:"Programmation avancee",explain:"La programmation avancee n'est pas un chapitre du cours ECN."},
+{ch:"Ch4",title:"Etapes d'une attaque ransomware",items:["Infection","Propagation","Chiffrement","Extorsion","Mise a jour"],intrus:"Mise a jour",explain:"La mise a jour est une mesure de protection, pas une etape d'attaque."},
+{ch:"Ch6",title:"Bonnes pratiques face a l'IA",items:["Remettre en question","Esprit critique","Verifier les infos","Croire aveuglement","Citer l'usage de l'IA"],intrus:"Croire aveuglement",explain:"Il faut au contraire exercer son esprit critique face a l'IA."},
+{ch:"Ch5",title:"Sanctions possibles pour non-respect du RGPD",items:["Mise en conformite","Limitation de traitement","Effacement de donnees","Promotion du responsable","Sanctions financieres"],intrus:"Promotion du responsable",explain:"La promotion n'est evidemment pas une sanction RGPD !"},
+{ch:"Ch2",title:"Accessibilite numerique",items:["WCAG","Directive 2016/2102","Contentsquare (2021)","Loi sur la chasse","EPN"],intrus:"Loi sur la chasse",explain:"La loi sur la chasse n'a rien a voir avec l'accessibilite numerique."},
+{ch:"Ch3",title:"Facteurs d'identite en ligne (Suler, 2002)",items:["Anonymat","Acces a l'information","Fantaisie vs realite","Niveau de conscience","Volume du disque dur"],intrus:"Volume du disque dur",explain:"Le volume du disque dur n'est pas un facteur de construction identitaire en ligne."},
+{ch:"Ch1",title:"Domaines des 20 competences (niveau A)",items:["Valeurs","Attitudes","Aptitudes","Connaissance critique","Marketing"],intrus:"Marketing",explain:"Les 4 domaines sont : valeurs, attitudes, aptitudes, connaissance et comprehension critique."},
+{ch:"Ch6",title:"Types d'hypertrucage/manipulation",items:["Deepfake","Information orientee","Clickbait","Podcast educatif","Propagande"],intrus:"Podcast educatif",explain:"Un podcast educatif n'est pas une forme de manipulation de l'information."},
+{ch:"Ch4",title:"Consequences de la comparaison sociale (RSN)",items:["Baisse de l'humeur","Insatisfaction corporelle","Symptomes depressifs","Augmentation du QI","Decalage de perception"],intrus:"Augmentation du QI",explain:"La comparaison sociale sur les RSN n'augmente pas le QI. Elle cause baisse d'humeur, insatisfaction et symptomes depressifs."},
+{ch:"Ch5",title:"Droits individuels RGPD",items:["Droit a l'information","Droit d'acces","Droit de rectification","Droit de publication gratuite","Droit d'opposition"],intrus:"Droit de publication gratuite",explain:"Le droit de publication gratuite n'est pas un droit RGPD. Les 8 droits incluent information, acces, rectification, effacement, limitation, portabilite, opposition et notification."}
+];
+
+const TOTAL_Q=15;
+let pool,qIdx,score,review;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function init(){showStart();}
+
+function showStart(){
+  document.getElementById('app').innerHTML=`
+    <h1>Trouve l'intrus !</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique (ECN)</p>
+    <div class="start-screen">
+      <div class="start-icon">&#128065;</div>
+      <h2>Repere l'element qui n'appartient pas au groupe !</h2>
+      <p>4 a 5 elements affiches, un seul est l'intrus. Clique dessus !</p>
+      <ul class="rules">
+        <li>${TOTAL_Q} questions tirees parmi ${QUESTIONS.length}</li>
+        <li>+1 point par bonne reponse</li>
+        <li>Explication detaillee apres chaque reponse</li>
+      </ul>
+      <button class="btn btn-primary" onclick="startGame()">Commencer</button>
+    </div>`;
+}
+
+function startGame(){
+  pool=shuffle([...QUESTIONS]).slice(0,TOTAL_Q);
+  qIdx=0;score=0;review=[];
+  nextQ();
+}
+
+function nextQ(){
+  if(qIdx>=pool.length){showResults();return;}
+  render();
+}
+
+function render(){
+  const q=pool[qIdx];
+  const pct=(qIdx/pool.length*100).toFixed(0);
+  const shuffled=shuffle([...q.items]);
+  let itemsHtml=shuffled.map(it=>`<button class="item-btn" onclick="pick('${it.replace(/'/g,"\\'")}')">${it}</button>`).join('');
+
+  document.getElementById('app').innerHTML=`
+    <h1>Trouve l'intrus !</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <div class="score-badge">Score : <span>${score}</span> / ${pool.length}</div>
+    <div class="progress-wrap">
+      <div class="progress-info"><span>Question ${qIdx+1}/${pool.length}</span><span>${pct}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="q-card">
+      <span class="ch-badge">${q.ch}</span>
+      <div class="q-title">${q.title}</div>
+      <div class="q-desc">Quel element ne fait PAS partie de ce groupe ?</div>
+      <div class="items" id="items">${itemsHtml}</div>
+      <div id="fb"></div>
+    </div>`;
+}
+
+function pick(choice){
+  const q=pool[qIdx];
+  const correct=choice===q.intrus;
+  if(correct)score++;
+  review.push({title:q.title,ch:q.ch,correct,intrus:q.intrus});
+
+  document.querySelectorAll('.item-btn').forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===q.intrus)b.classList.add('intrus');
+    else b.classList.add('normal');
+    if(b.textContent===choice&&!correct)b.classList.add('wrong-pick');
+  });
+
+  document.getElementById('fb').innerHTML=`
+    <div class="feedback ${correct?'correct':'wrong'}">
+      ${correct?'Bravo !':'Mauvaise reponse !'} L'intrus etait : <strong>${q.intrus}</strong>
+    </div>
+    <div class="explanation">${q.explain}</div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="qIdx++;nextQ()">Suivant &rarr;</button></div>`;
+}
+
+function showResults(){
+  const pct=(score/pool.length*100).toFixed(0);
+  const stars=pct>=80?'&#11088;&#11088;&#11088;':pct>=50?'&#11088;&#11088;':'&#11088;';
+  let revHtml=review.map(r=>`<div class="review-item"><span><span class="ch-badge" style="margin-right:6px">${r.ch}</span>${r.title}</span><span class="${r.correct?'ri-ok':'ri-ko'}">${r.correct?'Correct':'Intrus: '+r.intrus}</span></div>`).join('');
+  document.getElementById('app').innerHTML=`
+    <h1>Trouve l'intrus !</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <div class="results-card">
+      <h2>Resultats</h2>
+      <div class="final-score">${score} / ${pool.length}</div>
+      <div class="final-sub">${pct}% de reussite</div>
+      <div style="text-align:center;font-size:1.5rem;margin-bottom:14px">${stars}</div>
+      ${revHtml}
+      <div class="btn-row" style="margin-top:20px"><button class="btn btn-primary" onclick="init()">&#128260; Rejouer</button></div>
+    </div>`;
+}
+
+init();
+</script>
+</body>
+</html>

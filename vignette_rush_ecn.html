@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vignette Rush - ECN</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f1117;--card:#1a1d27;--card2:#232635;--accent:#6c63ff;--accent2:#ff6584;--green:#2ecc71;--red:#e74c3c;--text:#e0e0e8;--muted:#8888a0;--border:#2a2d3e;--radius:12px;--orange:#f39c12;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px;line-height:1.6;}
+h1{font-size:1.8rem;margin-bottom:4px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.subtitle{color:var(--muted);font-size:.9rem;margin-bottom:20px;}
+.container{max-width:700px;width:100%;}
+.score-badge{position:fixed;top:16px;right:20px;background:var(--card);border:1px solid var(--border);padding:8px 18px;border-radius:99px;font-weight:600;font-size:.95rem;z-index:10;}
+.score-badge span{color:var(--accent);}
+.progress-wrap{width:100%;margin-bottom:18px;}
+.progress-info{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);margin-bottom:6px;}
+.progress-bar{height:8px;background:var(--card2);border-radius:99px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .5s ease;}
+.timer-bar{height:6px;background:var(--card2);border-radius:99px;overflow:hidden;margin-bottom:12px;}
+.timer-fill{height:100%;border-radius:99px;transition:width .1s linear;}
+.timer-fill.ok{background:var(--green);}
+.timer-fill.warn{background:var(--orange);}
+.timer-fill.danger{background:var(--red);}
+.timer-text{text-align:center;font-size:.85rem;color:var(--muted);margin-bottom:8px;}
+.v-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;margin-bottom:16px;position:relative;overflow:hidden;}
+.v-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.ch-badge{display:inline-block;background:var(--accent);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:99px;margin-bottom:10px;font-weight:700;}
+.vignette-text{font-size:1rem;line-height:1.7;margin-bottom:18px;padding:16px;background:var(--card2);border-radius:8px;border-left:3px solid var(--accent2);font-style:italic;}
+.vignette-text .name{color:var(--accent2);font-weight:700;font-style:normal;}
+.q-prompt{font-weight:600;margin-bottom:14px;color:var(--accent);}
+.options{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.opt-btn{padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:.95rem;cursor:pointer;transition:all .2s;text-align:left;}
+.opt-btn:hover:not(:disabled){border-color:var(--accent);background:#2a2d4a;}
+.opt-btn.correct{border-color:var(--green);background:rgba(46,204,113,.15);color:var(--green);}
+.opt-btn.wrong{border-color:var(--red);background:rgba(231,76,60,.15);color:var(--red);}
+.opt-btn:disabled{cursor:not-allowed;opacity:.7;}
+.feedback{padding:14px 18px;border-radius:8px;margin-top:14px;font-weight:600;animation:popIn .35s ease;}
+.feedback.correct{background:rgba(46,204,113,.15);border:1px solid var(--green);color:var(--green);}
+.feedback.wrong{background:rgba(231,76,60,.15);border:1px solid var(--red);color:var(--red);}
+.feedback.timeout{background:rgba(243,156,18,.15);border:1px solid var(--orange);color:var(--orange);}
+@keyframes popIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.btn{padding:10px 22px;border:none;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{filter:brightness(1.15);}
+.btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center;}
+.results-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;}
+.results-card h2{text-align:center;margin-bottom:6px;}
+.final-score{text-align:center;font-size:2.8rem;font-weight:800;margin:10px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.final-sub{text-align:center;color:var(--muted);margin-bottom:20px;}
+.start-screen{text-align:center;padding:40px 20px;}
+.start-screen p{color:var(--muted);max-width:500px;margin:14px auto;}
+.start-icon{font-size:4rem;margin-bottom:10px;}
+.rules{text-align:left;background:var(--card2);border-radius:8px;padding:16px 20px;margin:18px 0;font-size:.9rem;color:var(--muted);}
+.rules li{margin-bottom:4px;list-style:disc inside;}
+.review-item{padding:10px 14px;background:var(--card2);border-radius:8px;margin-bottom:6px;font-size:.85rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;}
+.ri-ok{color:var(--green)}.ri-ko{color:var(--red)}.ri-to{color:var(--orange)}
+@media(max-width:500px){
+  body{padding:12px;}
+  .v-card{padding:18px 16px;}
+  .score-badge{position:static;margin-bottom:12px;text-align:center;}
+}
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script>
+const VIGNETTES=[
+{ch:"Ch4",text:"<span class='name'>Meline</span> recoit un appel d'une personne se faisant passer pour sa banque, lui demandant ses identifiants de connexion.",answer:"Vishing",options:["Phishing","Smishing","Vishing","Quishing"]},
+{ch:"Ch4",text:"Un employe recoit un <span class='name'>SMS urgent</span> lui demandant de cliquer sur un lien de livraison de colis.",answer:"Smishing",options:["Phishing","Smishing","Vishing","Spear phishing"]},
+{ch:"Ch3",text:"<span class='name'>Julie</span> decouvre que son ex-petit ami a partage ses photos intimes sur Internet sans son consentement.",answer:"Revenge porn",options:["Cyberharclement","Revenge porn","Sexting","Doxing"]},
+{ch:"Ch3",text:"Un <span class='name'>professeur</span> envoie des messages a connotation sexuelle a un eleve de 14 ans via Instagram, gagnant progressivement sa confiance.",answer:"Grooming",options:["Catfishing","Grooming","Cyberharclement","Trolling"]},
+{ch:"Ch4",text:"<span class='name'>Sarah</span> passe 3h/jour a comparer sa vie a celle des influenceurs sur Instagram et se sent de plus en plus deprimee.",answer:"Comparaison sociale defavorable",options:["FOMO","Comparaison sociale defavorable","Nomophobie","Dysmorphophobie"]},
+{ch:"Ch4",text:"<span class='name'>Pierre</span> panique completement quand il realise qu'il a oublie son telephone a la maison.",answer:"Nomophobie",options:["FOMO","Nomophobie","Anxiete generalisee","Technophobie"]},
+{ch:"Ch4",text:"Un utilisateur scanne un <span class='name'>QR code</span> sur une fausse affiche officielle de la commune et est redirige vers un site frauduleux.",answer:"Quishing",options:["Phishing","Smishing","Quishing","Scamming"]},
+{ch:"Ch5",text:"<span class='name'>Inami</span> veut recuperer ses donnees personnelles d'une application de streaming pour les transmettre a un concurrent.",answer:"Droit a la portabilite",options:["Droit d'acces","Droit a la portabilite","Droit d'opposition","Droit a l'oubli"]},
+{ch:"Ch4",text:"<span class='name'>Marc</span> recoit un email avec l'en-tete de sa banque, lui demandant de confirmer ses informations bancaires via un lien.",answer:"Phishing",options:["Phishing","Vishing","Smishing","Spear phishing"]},
+{ch:"Ch4",text:"Le <span class='name'>directeur financier</span> d'une PME recoit un email de son PDG (usurpe) demandant un virement urgent et confidentiel de 50 000 euros.",answer:"Spear phishing (arnaque au president)",options:["Phishing","Spear phishing (arnaque au president)","Vishing","Scamming"]},
+{ch:"Ch4",text:"L'ordinateur d'<span class='name'>Antoine</span> affiche un message : 'Vos fichiers ont ete chiffres. Payez 2 bitcoins pour les recuperer.'",answer:"Ransomware",options:["Virus","Ransomware","Cheval de Troie","Spyware"]},
+{ch:"Ch5",text:"<span class='name'>Claire</span> decouvre qu'une entreprise detient des informations incorrectes a son sujet et veut les faire corriger.",answer:"Droit de rectification",options:["Droit d'acces","Droit de rectification","Droit a l'oubli","Droit d'opposition"]},
+{ch:"Ch5",text:"<span class='name'>Thomas</span>, 16 ans, souhaite faire supprimer une photo embarrassante qu'il avait publiee a 11 ans sur un reseau social.",answer:"Droit a l'oubli (effacement)",options:["Droit a l'oubli (effacement)","Droit de rectification","Droit a la portabilite","Droit d'opposition"]},
+{ch:"Ch6",text:"<span class='name'>Lisa</span> affirme a ses collegues que 'les plantes n'ont pas besoin d'eau en hiver' parce qu'elle l'a lu quelque part. C'est faux, mais elle y croit.",answer:"Mesinformation",options:["Desinformation","Mesinformation","Rumeur","Fake news"]},
+{ch:"Ch6",text:"<span class='name'>Melanie</span> redige volontairement un faux email interne disant que l'examen est annule, pour semer la confusion.",answer:"Desinformation",options:["Mesinformation","Desinformation","Intox","Rumeur"]},
+{ch:"Ch6",text:"Un site publie un article avec le titre : 'Tu ne devineras JAMAIS ce que ce ministre a fait !!!' mais le contenu est banal et decevant.",answer:"Piege a clics (clickbait)",options:["Fake news","Piege a clics (clickbait)","Desinformation","Propagande"]},
+{ch:"Ch6",text:"Une video montre un president prononcant un discours qu'il n'a jamais tenu. La video a ete generee par IA a partir de vraies images.",answer:"Deepfake",options:["Fake news","Deepfake","Montage","Propagande"]},
+{ch:"Ch4",text:"<span class='name'>Sophie</span> recoit un message sur WhatsApp d'un numero inconnu pretendant etre sa fille, disant avoir perdu son telephone et demandant de l'argent.",answer:"Smishing",options:["Phishing","Vishing","Smishing","Broutage"]},
+{ch:"Ch4",text:"<span class='name'>Jean-Pierre</span>, 65 ans, echange depuis 3 mois avec une femme magnifique sur un site de rencontres qui n'est jamais disponible pour un appel video et vient de lui demander 5000 euros pour un 'billet d'avion'.",answer:"Broutage / romance scam",options:["Catfishing","Broutage / romance scam","Phishing","Ghosting"]},
+{ch:"Ch4",text:"<span class='name'>Kevin</span> telecharge un jeu gratuit qui semble normal, mais en arriere-plan, le logiciel enregistre toutes ses frappes clavier.",answer:"Cheval de Troie avec keylogger",options:["Virus","Ransomware","Cheval de Troie avec keylogger","Cookie malveillant"]},
+{ch:"Ch3",text:"<span class='name'>Lea</span> remarque que des publicites pour des bagues apparaissent partout apres avoir visite un seul site de bijouterie.",answer:"Cookies de suivi (tracking)",options:["Virus publicitaire","Cookies de suivi (tracking)","Piratage du navigateur","Spam"]},
+{ch:"Ch3",text:"<span class='name'>Paul</span> decouvre sur Google Maps Timeline l'historique complet de tous ses deplacements des 6 derniers mois.",answer:"Geolocalisation (trace passive)",options:["Cookie","Geolocalisation (trace passive)","Adresse IP","Navigation privee"]},
+{ch:"Ch2",text:"<span class='name'>Audrey</span>, etudiante, possede un ordinateur mais il est trop ancien pour installer le logiciel statistique necessaire a son memoire.",answer:"Fracture numerique 1er degre (hardware)",options:["Fracture numerique 1er degre (hardware)","Fracture numerique 2e degre (software)","Fracture numerique 3e degre (reseau)","Illectronisme"]},
+{ch:"Ch2",text:"La classe de <span class='name'>Pauline</span> a recu des tablettes dans le cadre d'un projet 'Ecole numerique', mais l'infrastructure ne permet pas la connexion Wi-Fi.",answer:"Fracture numerique 3e degre (reseau)",options:["Fracture numerique 1er degre (hardware)","Fracture numerique 2e degre (software)","Fracture numerique 3e degre (reseau)","Fracture numerique 4e degre"]},
+{ch:"Ch2",text:"Un <span class='name'>demandeur d'emploi</span> a un ordinateur et Internet mais ne sait pas utiliser les plateformes d'offres d'emploi ni rediger un CV en ligne.",answer:"Fracture numerique 5e degre (competences strategiques)",options:["Fracture numerique 4e degre (instrumentales)","Fracture numerique 5e degre (competences strategiques)","Illectronisme","Fracture numerique 2e degre"]},
+{ch:"Ch4",text:"Le <span class='name'>CEO</span> d'une multinationale recoit un email ultra-personnalise exploitant des informations sur son prochain voyage d'affaires.",answer:"Whaling",options:["Phishing","Spear phishing","Whaling","Vishing"]},
+{ch:"Ch3",text:"Un groupe d'eleves <span class='name'>exclut systematiquement</span> Lina de tous les groupes de discussion en ligne pendant des semaines.",answer:"Cyberharcelement (exclusion repetee)",options:["Cyberviolence","Cyberharcelement (exclusion repetee)","Trolling","Ghosting"]},
+{ch:"Ch3",text:"Un individu <span class='name'>filme une agression</span> dans la rue et la diffuse immediatement sur les reseaux sociaux.",answer:"Happy slapping",options:["Cyberharcelement","Happy slapping","Revenge porn","Doxing"]},
+{ch:"Ch3",text:"<span class='name'>Alex</span> ne regarde que du rap sur Spotify et ne decouvre jamais d'autres genres musicaux car l'algorithme ne lui propose que du rap.",answer:"Effet bulle (algorithme de recommandation)",options:["Effet bulle (algorithme de recommandation)","Biais de confirmation","Cyberaddiction","Nomophobie"]},
+{ch:"Ch5",text:"Un <span class='name'>chercheur</span> collecte via un questionnaire en ligne l'age, le sexe et les reponses a une echelle de competences numeriques d'etudiants.",answer:"Traitement de donnees au sens du RGPD",options:["Simple consultation","Traitement de donnees au sens du RGPD","Anonymisation","Recherche exempte du RGPD"]},
+{ch:"Ch5",text:"Un <span class='name'>site web</span> combine la tranche d'age, le code postal et la profession d'un individu pour l'identifier.",answer:"Identification par combinaison de donnees",options:["Anonymisation reussie","Pseudonymisation","Identification par combinaison de donnees","Traitement illicite"]},
+{ch:"Ch6",text:"<span class='name'>Thomas</span> entend dans les couloirs que 'le cours de demain sera annule' mais personne n'a verifie cette information.",answer:"Rumeur",options:["Mesinformation","Desinformation","Rumeur","Fake news"]},
+{ch:"Ch6",text:"Un <span class='name'>gouvernement</span> diffuse en continu des affiches ne montrant que les chiffres economiques favorables, ignorant les consequences negatives.",answer:"Propagande",options:["Fake news","Propagande","Information orientee","Desinformation"]},
+{ch:"Ch6",text:"Un <span class='name'>reportage</span> attribue la hausse de l'absenteisme scolaire uniquement au manque de motivation, sans mentionner les problemes de sante mentale.",answer:"Information orientee",options:["Fake news","Propagande","Desinformation","Information orientee"]},
+{ch:"Ch4",text:"<span class='name'>Emma</span> verifie compulsivement ses reseaux sociaux toutes les 10 minutes par peur de rater une soiree ou une publication importante.",answer:"FOMO (Fear of Missing Out)",options:["FOMO (Fear of Missing Out)","Nomophobie","Doomscrolling","Cyberaddiction"]},
+{ch:"Ch4",text:"<span class='name'>Lucas</span> recoit un email pretendument de la gendarmerie l'accusant d'avoir consulte du materiel pedopornographique et exigeant 4750 euros.",answer:"Fausse convocation judiciaire (broutage)",options:["Phishing","Fausse convocation judiciaire (broutage)","Vishing","Spear phishing"]},
+{ch:"Ch3",text:"<span class='name'>Marion</span> utilise la navigation privee et pense etre totalement anonyme sur Internet.",answer:"Faux sentiment de securite (navigation privee limitee)",options:["Protection complete","Faux sentiment de securite (navigation privee limitee)","VPN actif","Anonymat garanti"]},
+{ch:"Ch5",text:"Un <span class='name'>patient</span> demande a son psychologue de lui fournir une copie de l'integralite de son dossier.",answer:"Droit d'acces",options:["Droit d'acces","Droit de rectification","Droit a la portabilite","Droit d'opposition"]},
+{ch:"Ch4",text:"<span class='name'>Nadia</span> se regarde avec les filtres Snapchat et commence a ne plus supporter son vrai visage sans filtres.",answer:"Dysmorphophobie liee aux filtres",options:["Comparaison sociale","Dysmorphophobie liee aux filtres","Nomophobie","FOMO"]},
+{ch:"Ch4",text:"<span class='name'>Mehdi</span> a croise une fille sur Tinder. Son profil est parfait mais elle n'a aucun ami commun, tres peu de photos, et refuse tout appel video.",answer:"Catfishing",options:["Catfishing","Broutage","Ghosting","Trolling"]},
+{ch:"Ch4",text:"<span class='name'>Camille</span> sort avec quelqu'un depuis 2 mois. Du jour au lendemain, cette personne arrete de repondre a tous ses messages sans aucune explication.",answer:"Ghosting",options:["Nomophobie","Ghosting","Cyberharcelement","Catfishing"]},
+{ch:"Ch2",text:"Un <span class='name'>neuropsychologue</span> possede l'equipement EEG mais n'a pas le logiciel d'analyse qui est trop cher.",answer:"Fracture numerique 2e degre (software)",options:["Fracture numerique 1er degre (hardware)","Fracture numerique 2e degre (software)","Fracture numerique 3e degre","Fracture numerique 5e degre"]},
+{ch:"Ch1",text:"<span class='name'>L'Union europeenne</span> fixe un objectif de 80% d'adultes avec des competences numeriques de base pour 2030, mais en 2023 seuls 56% y parviennent.",answer:"Decennie numerique de l'Europe",options:["DigComp 3.0","Decennie numerique de l'Europe","WCAG","Directive 2016/2102"]},
+{ch:"Ch6",text:"<span class='name'>Laura</span> croit que des reptiliens deguises en humains controlent secretement les gouvernements du monde entier.",answer:"Theorie du complot",options:["Rumeur","Desinformation","Theorie du complot","Mesinformation"]},
+{ch:"Ch5",text:"Un <span class='name'>organisme</span> collecte des donnees sur l'origine ethnique et les opinions politiques de ses membres.",answer:"Traitement de donnees sensibles (interdit sauf exception)",options:["Traitement normal","Traitement de donnees sensibles (interdit sauf exception)","Anonymisation","Pseudonymisation"]},
+{ch:"Ch6",text:"Un <span class='name'>compte TikTok</span> publie que 'Instagram va supprimer tous les comptes inactifs ce week-end sauf si vous partagez cette video'.",answer:"Intox",options:["Fake news","Desinformation","Intox","Rumeur"]},
+{ch:"Ch4",text:"<span class='name'>Valerie</span> connecte son fils de 5 ans a une poupee WiFi qui enregistre les conversations et les transmet a des serveurs distants.",answer:"Risque des jouets connectes (IoT)",options:["Risque des jouets connectes (IoT)","Phishing","Spyware","Virus"]},
+{ch:"Ch3",text:"<span class='name'>David</span> poste un commentaire insultant unique sous la photo d'un camarade de classe.",answer:"Cyberviolence (acte ponctuel)",options:["Cyberharcelement","Cyberviolence (acte ponctuel)","Trolling","Flaming"]},
+{ch:"Ch1",text:"Les enfants savent utiliser YouTube et TikTok pour se divertir mais ne savent pas mener une recherche fondee sur des preuves.",answer:"Paradoxe de la competence technique vs litteratie mediatique",options:["Fracture numerique","Paradoxe de la competence technique vs litteratie mediatique","Illectronisme","Effet bulle"]},
+{ch:"Ch5",text:"L'<span class='name'>UMONS</span> determine les finalites et les moyens du traitement des donnees de recherche.",answer:"Responsable du traitement (RT)",options:["Sous-traitant","DPO","Responsable du traitement (RT)","Personne concernee"]},
+{ch:"Ch6",text:"Pendant la <span class='name'>campagne presidentielle americaine</span>, des articles totalement inventes sont crees pour generer des revenus publicitaires.",answer:"Fake news (motivation financiere)",options:["Propagande","Fake news (motivation financiere)","Desinformation","Information orientee"]},
+{ch:"Ch3",text:"<span class='name'>Facebook</span> utilise les likes, partages et commentaires d'un utilisateur pour lui creer un profil publicitaire sans qu'il le sache.",answer:"Empreinte numerique passive",options:["Trace active","Empreinte numerique passive","Cookie de session","Navigation privee"]},
+{ch:"Ch4",text:"<span class='name'>Un pirate</span> teste automatiquement des millions de combinaisons identifiant/mot de passe volees lors d'une fuite, sur d'autres services en ligne.",answer:"Credential stuffing",options:["Brute force","Credential stuffing","Phishing","Keylogging"]},
+{ch:"Ch2",text:"Un <span class='name'>bar a soupes</span> ne propose que des baguettes. Un client ne peut pas manger et repart frustre.",answer:"Metaphore de l'accessibilite numerique (Contentsquare)",options:["Fracture numerique","Metaphore de l'accessibilite numerique (Contentsquare)","Illectronisme","Exclusion sociale"]},
+{ch:"Ch6",text:"<span class='name'>Mme Kumps</span> (UMONS) decouvre que les eleves de 8-13 ans lisent les pages web selon un pattern en forme de F.",answer:"Pattern F (eye tracking / oculometrie)",options:["Effet bulle","Biais de confirmation","Pattern F (eye tracking / oculometrie)","Comparaison sociale"]},
+{ch:"Ch5",text:"Le <span class='name'>principe de minimisation</span> du RGPD impose de ne collecter que les donnees strictement necessaires.",answer:"Minimisation des donnees",options:["Liceite","Minimisation des donnees","Exactitude","Limitation de conservation"]},
+{ch:"Ch1",text:"<span class='name'>Martiniello (1994)</span> evoque un sentiment subjectif d'appartenance a une communaute politique.",answer:"Dimension identitaire de la citoyennete",options:["Dimension politique","Dimension sociale","Dimension identitaire de la citoyennete","Dimension economique"]}
+];
+
+const TOTAL_Q=15;
+const TIME_LIMIT=30;
+let pool,qIdx,score,review,timerVal,timerRef;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function init(){showStart();}
+
+function showStart(){
+  if(timerRef)clearInterval(timerRef);
+  document.getElementById('app').innerHTML=`
+    <h1>Vignette Rush</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique (ECN)</p>
+    <div class="start-screen">
+      <div class="start-icon">&#9889;</div>
+      <h2>Identifie le concept en situation !</h2>
+      <p>Lis la vignette clinique et identifie le concept correct en moins de ${TIME_LIMIT} secondes !</p>
+      <ul class="rules">
+        <li>${TOTAL_Q} vignettes tirees parmi ${VIGNETTES.length}</li>
+        <li>${TIME_LIMIT} secondes par vignette</li>
+        <li>+1 point par bonne reponse</li>
+        <li>Bonus si reponse rapide (< 10s)</li>
+      </ul>
+      <button class="btn btn-primary" onclick="startGame()">Commencer</button>
+    </div>`;
+}
+
+function startGame(){
+  pool=shuffle([...VIGNETTES]).slice(0,TOTAL_Q);
+  qIdx=0;score=0;review=[];
+  nextQ();
+}
+
+function nextQ(){
+  if(qIdx>=pool.length){showResults();return;}
+  timerVal=TIME_LIMIT;
+  render();
+  startTimer();
+}
+
+function startTimer(){
+  if(timerRef)clearInterval(timerRef);
+  timerRef=setInterval(()=>{
+    timerVal-=0.1;
+    if(timerVal<=0){
+      timerVal=0;
+      clearInterval(timerRef);
+      timeout();
+    }
+    updateTimer();
+  },100);
+}
+
+function updateTimer(){
+  const fill=document.getElementById('tfill');
+  const txt=document.getElementById('ttext');
+  if(!fill)return;
+  const pct=(timerVal/TIME_LIMIT*100);
+  fill.style.width=pct+'%';
+  fill.className='timer-fill '+(pct>50?'ok':pct>20?'warn':'danger');
+  if(txt)txt.textContent=Math.ceil(timerVal)+'s';
+}
+
+function render(){
+  const q=pool[qIdx];
+  const pct=(qIdx/pool.length*100).toFixed(0);
+  const shuffledOpts=shuffle([...q.options]);
+  let optsHtml=shuffledOpts.map(o=>`<button class="opt-btn" onclick="answer('${o.replace(/'/g,"\\'")}')">${o}</button>`).join('');
+
+  document.getElementById('app').innerHTML=`
+    <h1>Vignette Rush</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <div class="score-badge">Score : <span>${score}</span> / ${pool.length}</div>
+    <div class="progress-wrap">
+      <div class="progress-info"><span>Question ${qIdx+1}/${pool.length}</span><span>${pct}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="timer-text" id="ttext">${TIME_LIMIT}s</div>
+    <div class="timer-bar"><div class="timer-fill ok" id="tfill" style="width:100%"></div></div>
+    <div class="v-card">
+      <span class="ch-badge">${q.ch}</span>
+      <div class="vignette-text">${q.text}</div>
+      <div class="q-prompt">Quel concept est illustre ici ?</div>
+      <div class="options" id="opts">${optsHtml}</div>
+      <div id="fb"></div>
+    </div>`;
+}
+
+function answer(choice){
+  clearInterval(timerRef);
+  const q=pool[qIdx];
+  const correct=choice===q.answer;
+  const fast=timerVal>(TIME_LIMIT-10);
+  const pts=correct?(fast?2:1):0;
+  if(correct)score+=pts>1?pts:1;
+  review.push({text:q.text.replace(/<[^>]+>/g,'').substring(0,60)+'...',ch:q.ch,correct,answer:q.answer,pts});
+
+  document.querySelectorAll('.opt-btn').forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===q.answer)b.classList.add('correct');
+    if(b.textContent===choice&&!correct)b.classList.add('wrong');
+  });
+  document.getElementById('fb').innerHTML=`
+    <div class="feedback ${correct?'correct':'wrong'}">
+      ${correct?(fast?'Eclair ! +2 pts':'Correct ! +1 pt'):'Incorrect. Reponse : '+q.answer}
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="qIdx++;nextQ()">Suivant &rarr;</button></div>`;
+}
+
+function timeout(){
+  const q=pool[qIdx];
+  review.push({text:q.text.replace(/<[^>]+>/g,'').substring(0,60)+'...',ch:q.ch,correct:false,answer:q.answer,pts:0});
+  document.querySelectorAll('.opt-btn').forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===q.answer)b.classList.add('correct');
+  });
+  document.getElementById('fb').innerHTML=`
+    <div class="feedback timeout">Temps ecoule ! Reponse : ${q.answer}</div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="qIdx++;nextQ()">Suivant &rarr;</button></div>`;
+}
+
+function showResults(){
+  if(timerRef)clearInterval(timerRef);
+  const maxPts=pool.length*2;
+  const pct=(score/pool.length*100).toFixed(0);
+  const stars=pct>=80?'&#11088;&#11088;&#11088;':pct>=50?'&#11088;&#11088;':'&#11088;';
+  let revHtml=review.map(r=>`<div class="review-item"><span><span class="ch-badge" style="margin-right:6px">${r.ch}</span>${r.text}</span><span class="${r.correct?'ri-ok':(r.pts===0?'ri-ko':'ri-to')}">${r.correct?'+'+r.pts:r.answer}</span></div>`).join('');
+  document.getElementById('app').innerHTML=`
+    <h1>Vignette Rush</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <div class="results-card">
+      <h2>Resultats</h2>
+      <div class="final-score">${score} pts</div>
+      <div class="final-sub">${review.filter(r=>r.correct).length}/${pool.length} correctes (bonus vitesse possible)</div>
+      <div style="text-align:center;font-size:1.5rem;margin-bottom:14px">${stars}</div>
+      ${revHtml}
+      <div class="btn-row" style="margin-top:20px"><button class="btn btn-primary" onclick="init()">&#128260; Rejouer</button></div>
+    </div>`;
+}
+
+init();
+</script>
+</body>
+</html>

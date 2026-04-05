@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qui suis-je ? - ECN</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0f1117;--card:#1a1d27;--card2:#232635;--accent:#6c63ff;--accent2:#ff6584;
+    --green:#2ecc71;--red:#e74c3c;--text:#e0e0e8;--muted:#8888a0;--border:#2a2d3e;
+    --radius:12px;
+  }
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:var(--bg);color:var(--text);min-height:100vh;
+    display:flex;flex-direction:column;align-items:center;
+    padding:20px;line-height:1.6;
+  }
+  h1{font-size:1.8rem;margin-bottom:4px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .subtitle{color:var(--muted);font-size:.9rem;margin-bottom:20px;}
+  .container{max-width:700px;width:100%;}
+  .progress-wrap{width:100%;margin-bottom:18px;}
+  .progress-info{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);margin-bottom:6px;}
+  .progress-bar{height:8px;background:var(--card2);border-radius:99px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .5s ease;}
+  .score-badge{position:fixed;top:16px;right:20px;background:var(--card);border:1px solid var(--border);padding:8px 18px;border-radius:99px;font-weight:600;font-size:.95rem;z-index:10;}
+  .score-badge span{color:var(--accent);}
+  .case-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;margin-bottom:16px;position:relative;overflow:hidden;}
+  .case-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+  .ch-badge{display:inline-block;background:var(--accent);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:99px;margin-bottom:12px;font-weight:700;}
+  .question-header{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+  .question-icon{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
+  .question-title{font-size:1.15rem;font-weight:600;}
+  .clues-list{list-style:none;margin-bottom:20px;}
+  .clue-item{padding:10px 14px;margin-bottom:8px;background:var(--card2);border-radius:8px;border-left:3px solid var(--accent);font-size:.95rem;animation:slideIn .4s ease;}
+  .clue-item .num{color:var(--accent);font-weight:700;margin-right:8px;}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+  .options{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .option-btn{padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:.95rem;cursor:pointer;transition:all .2s;text-align:left;}
+  .option-btn:hover:not(:disabled){border-color:var(--accent);background:#2a2d4a;}
+  .option-btn.correct{border-color:var(--green);background:rgba(46,204,113,.15);color:var(--green);}
+  .option-btn.wrong{border-color:var(--red);background:rgba(231,76,60,.15);color:var(--red);}
+  .option-btn:disabled{cursor:not-allowed;opacity:.7;}
+  .btn{padding:10px 22px;border:none;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{filter:brightness(1.15);transform:translateY(-1px);}
+  .btn-secondary{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+  .btn-secondary:hover{border-color:var(--accent);}
+  .btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .feedback{padding:14px 18px;border-radius:8px;margin-top:14px;font-weight:600;animation:popIn .35s ease;}
+  .feedback.correct{background:rgba(46,204,113,.15);border:1px solid var(--green);color:var(--green);}
+  .feedback.wrong{background:rgba(231,76,60,.15);border:1px solid var(--red);color:var(--red);}
+  @keyframes popIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+  .results-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;margin-bottom:16px;}
+  .results-card h2{text-align:center;margin-bottom:6px;}
+  .final-score{text-align:center;font-size:2.8rem;font-weight:800;margin:10px 0;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .final-sub{text-align:center;color:var(--muted);margin-bottom:20px;}
+  .review-item{padding:12px 16px;background:var(--card2);border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+  .review-item .ri-name{font-weight:600;}
+  .review-item .ri-answer{color:var(--muted);font-size:.88rem;}
+  .review-item .ri-pts{font-weight:700;white-space:nowrap;}
+  .ri-pts.good{color:var(--green)}.ri-pts.ok{color:orange}.ri-pts.bad{color:var(--red)}
+  .start-screen{text-align:center;padding:40px 20px;}
+  .start-screen p{color:var(--muted);max-width:500px;margin:14px auto;}
+  .start-icon{font-size:4rem;margin-bottom:10px;}
+  .rules{text-align:left;background:var(--card2);border-radius:8px;padding:16px 20px;margin:18px 0;font-size:.9rem;color:var(--muted);}
+  .rules li{margin-bottom:4px;list-style:disc inside;}
+  @media(max-width:500px){
+    body{padding:12px;}
+    .case-card,.results-card{padding:18px 16px;}
+    .score-badge{position:static;margin-bottom:12px;text-align:center;}
+  }
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script>
+const CASES=[
+{ch:"Ch1",answer:"Le numerique",clues:["Je suis constitue de 0 et de 1.","Je viens du latin 'numerus' qui signifie 'le nombre'.","Je suis un langage binaire utilise par les ordinateurs, tablettes et smartphones.","L'Academie francaise (2013) recommande de me privilegier a 'digital'."],options:["Le numerique","Le digital","L'informatique","L'analogique","Le binaire"]},
+{ch:"Ch1",answer:"DigComp 3.0",clues:["Je suis un cadre de reference europeen.","Ma version actuelle integre transversalement l'intelligence artificielle.","Je contiens 362 enonces de competences repartis en 5 domaines.","Je vise a ameliorer la competence numerique des citoyens europeens."],options:["DigComp 3.0","DigEdu","WCAG","DigCompEdu","ECDL"]},
+{ch:"Ch1",answer:"Schnapper (2000)",clues:["Je suis un auteur de reference sur la citoyennete.","Selon moi, la citoyennete a d'abord un sens juridique.","Je definis le citoyen comme un 'sujet de droit'.","Je distingue les droits politiques et les droits civils."],options:["Schnapper (2000)","Herreman et al. (2017)","Hadyeh et al. (2017)","Richardson & Milovidov (2020)","Martiniello (1994)"]},
+{ch:"Ch1",answer:"Richardson & Milovidov (2020)",clues:["Nous avons publie un Manuel d'education a la citoyennete numerique.","Notre modele comporte 3 niveaux : A, B et C.","Le niveau A comprend 20 competences pour une culture de la democratie.","Notre modele est publie par le Conseil de l'Europe."],options:["Richardson & Milovidov (2020)","Hadyeh et al. (2017)","Herreman et al. (2017)","Leblanc et al. (2021)","Cosgrove & Cachia (2025)"]},
+{ch:"Ch1",answer:"La metaphore de la chaise",clues:["Je compare la citoyennete a un meuble du quotidien.","Si un de mes pieds manque, je deviens instable.","Mes quatre pieds representent les dimensions economique, sociale, culturelle et politique.","Je suis utilisee par Richardson & Milovidov (2020) pour illustrer la citoyennete."],options:["La metaphore de la chaise","La metaphore du pont","La metaphore de l'arbre","La metaphore du puzzle","La metaphore de la maison"]},
+{ch:"Ch1",answer:"Les 10 domaines du niveau C",clues:["Je constitue le contenu concret du modele de Richardson & Milovidov.","Je suis regroupe en 3 grandes thematiques : Etre en ligne, Bien-etre en ligne, Mes droits en ligne.","Je comprends l'acces, la litteratie numerique, la securite et la liberte d'expression.","Je compte exactement 10 elements."],options:["Les 10 domaines du niveau C","Les 20 competences du niveau A","Les 5 piliers du niveau B","Les 9 principes directeurs","Les 5 domaines DigComp"]},
+{ch:"Ch1",answer:"Hadyeh et al. (2017)",clues:["Nous distinguons 4 dimensions fondamentales de la citoyennete.","Ces dimensions correspondent a 4 sous-systemes essentiels a la societe.","Nous parlons de dimensions politique, sociale, culturelle et economique.","Nous sommes cites dans le Manuel de Richardson & Milovidov (2020)."],options:["Hadyeh et al. (2017)","Schnapper (2000)","Herreman et al. (2017)","Dupont & Hubin (2009)","Leblanc et al. (2021)"]},
+{ch:"Ch1",answer:"Les 17 competences DigComp",clues:["Je suis reparti en 5 domaines de competences.","Mon domaine 2 comprend 6 competences, c'est le plus grand.","Mes domaines 4 et 5 sont dits 'transversaux'.","Je totalise exactement 17 competences dans le referentiel DigComp 3.0."],options:["Les 17 competences DigComp","Les 20 competences du niveau A","Les 10 domaines du niveau C","Les 5 piliers du niveau B","Les 362 enonces DigComp"]},
+{ch:"Ch1",answer:"Domaine 4 : Securite",clues:["Je suis l'un des 5 domaines du DigComp 3.0.","Je suis un domaine dit 'transversal'.","Je comprends la protection des appareils, des donnees personnelles et de la sante.","Je m'applique a tout type d'activite realisee par des moyens numeriques."],options:["Domaine 4 : Securite","Domaine 1 : Information","Domaine 2 : Communication","Domaine 3 : Creation de contenus","Domaine 5 : Resolution de problemes"]},
+{ch:"Ch1",answer:"La Charte des droits fondamentaux de l'UE",clues:["J'ai ete adoptee le 7 decembre 2000.","Je comprends 54 articles et 6 grands chapitres.","Je regroupe les droits civiques, politiques, economiques et sociaux des citoyens europeens.","J'ai ete signee par les presidents du Parlement europeen, du Conseil et de la Commission."],options:["La Charte des droits fondamentaux de l'UE","La CEDH","La Declaration universelle des droits de l'homme","Le Traite de Lisbonne","Le RGPD"]},
+{ch:"Ch2",answer:"La fracture numerique",clues:["Je suis apparue dans les annees 1990 avec l'essor des NTIC.","Je designe initialement l'incapacite materielle a acceder aux contenus numeriques.","On me decrit en 3 degres : acces, usage, implications sociales.","Dagnies (2016) m'a etendue a 8 degres."],options:["La fracture numerique","L'illectronisme","L'exclusion sociale","La pauvrete numerique","L'analphabetisme"]},
+{ch:"Ch2",answer:"L'illectronisme",clues:["Je designe une maitrise insuffisante des competences numeriques de base.","Je suis defini par l'ANLCI.","Je suis comparable a l'illettrisme mais dans le domaine numerique.","Je touche les personnes qui ne peuvent pas effectuer de maniere autonome les actes courants de la vie numerique."],options:["L'illectronisme","La fracture numerique du 3e degre","L'analphabetisme numerique","L'exclusion digitale","La pauvrete informationnelle"]},
+{ch:"Ch2",answer:"Les MOOC",clues:["Je suis un dispositif d'apprentissage en ligne.","Mon nom signifie Massive Open Online Course.","Je peux etre de type xMOOC (transmissif) ou cMOOC (connectiviste).","Je contribue a reduire les inegalites en matiere d'accessibilite a l'education."],options:["Les MOOC","Les SPOC","Les LMS","Les CLOM","Les webinaires"]},
+{ch:"Ch2",answer:"Les EPN",clues:["Je suis un espace de mediation numerique.","Mon acronyme signifie Espace Public Numerique.","Je lutte contre les inegalites sociales liees a un manque d'acces ou de competences TIC.","Je propose un accompagnement gratuit pour les citoyens eloignes du numerique."],options:["Les EPN","Les FabLab","Les bibliotheques","Les telecentres","Les cyber-cafes"]},
+{ch:"Ch2",answer:"Dagnies (2016)",clues:["J'ai developpe une typologie de 8 degres de fracture numerique.","Mon 1er degre concerne le hardware (materiel).","Mon 6e degre concerne les contenus proteges ou payants.","J'ajoute des enjeux comme les contenus non traduits et la productivite aux fractures classiques."],options:["Dagnies (2016)","Ottaviani (2016)","Brotcorne & Valenduc (2009)","Warschauer (2003)","Van Neck (2022)"]},
+{ch:"Ch2",answer:"Les WCAG",clues:["Je suis un ensemble de recommandations pour l'accessibilite web.","J'ai 4 principes : perceptible, utilisable, comprehensible, robuste.","Mon seuil de contraste minimum au niveau AA est de 4.5:1.","Je suis publie par le W3C (World Wide Web Consortium)."],options:["Les WCAG","Le DigComp","Le RGPD","La Directive 2016/2102","Les normes ISO 9241"]},
+{ch:"Ch2",answer:"La Directive 2016/2102",clues:["Je suis une directive europeenne.","Je concerne l'accessibilite des sites web du secteur public.","J'oblige les administrations a rendre leurs services en ligne accessibles.","Je me refere aux normes WCAG pour definir les exigences techniques."],options:["La Directive 2016/2102","Le RGPD","La Charte des droits fondamentaux","Le Digital Services Act","La Directive eCommerce"]},
+{ch:"Ch2",answer:"Les competences instrumentales",clues:["Je suis l'une des 3 categories de competences numeriques selon Ottaviani (2016).","Je concerne les capacites techniques a manipuler le materiel et les logiciels.","Je suis le 4e degre de fracture selon Dagnies (2016).","Sans moi, on ne peut pas utiliser efficacement un clavier ou naviguer sur le web."],options:["Les competences instrumentales","Les competences informationnelles","Les competences strategiques","Les competences transversales","Les competences de base"]},
+{ch:"Ch2",answer:"32% des Wallons",clues:["Je suis un chiffre cle du Barometre Digital Wallonia 2023.","Je represente la proportion de citoyens eloignes du numerique en Wallonie.","Je corresponds a environ un tiers de la population.","Ces citoyens ont une attitude reservee et peu confiante envers les technologies."],options:["32% des Wallons","18% des Wallons","50% des Wallons","6% des menages","64% des Europeens"]},
+{ch:"Ch3",answer:"L'identite numerique",clues:["Selon Filliettaz (2011), je suis la somme des donnees et des traces associees au nom.","Je ne me resume pas a ce qu'on devoile de facon consciente.","Je comprends les traces techniques comme l'adresse IP et les cookies.","Je suis construite, pas innee (Ollivier, 2009)."],options:["L'identite numerique","L'empreinte numerique","La reputation en ligne","Le profil numerique","L'avatar"]},
+{ch:"Ch3",answer:"Ertzscheid (2013)",clues:["J'ai identifie 3 types de traces numeriques.","Mon premier type est les traces 'profilaires' (qui je suis).","Mon deuxieme type est les traces 'navigationnelles' (comment je me comporte).","Mon troisieme type est les traces 'inscriptibles' (ce que je pense)."],options:["Ertzscheid (2013)","Nabti (2014)","Filliettaz (2011)","Kaspersky","Michel (Canoprof)"]},
+{ch:"Ch3",answer:"Un cookie",clues:["Je suis un temoin de connexion.","Je m'enregistre sous forme de fichier texte dans l'ordinateur.","Je suis indispensable pour les sites demandant une identification.","Je peux etre utilise pour traquer l'utilisateur d'un site a l'autre."],options:["Un cookie","Un pixel de suivi","Un cache","Un log","Une empreinte digitale"]},
+{ch:"Ch3",answer:"La netiquette",clues:["Mon nom est la contraction de NET et d'etiquette.","Je suis definie par l'Office quebecois de la langue francaise (2013).","Je suis un ensemble de conventions de bienseance pour les internautes.","Kaspersky a formule mes principales regles, dont 'adoptez les memes regles en ligne que dans la vraie vie'."],options:["La netiquette","La charte informatique","Le code de conduite","La politique d'usage","La cyber-etiquette"]},
+{ch:"Ch3",answer:"L'effet bulle",clues:["Je suis cree par les algorithmes de recommandation.","A force de ne voir que ce qu'on aime, on ne connait rien d'autre.","L'univers de l'utilisateur se retrecit, ainsi que son gout du debat.","Leonard, 15 ans, illustre mon fonctionnement dans une video pedagogique."],options:["L'effet bulle","Le biais de confirmation","La chambre d'echo","Le filtre algorithmique","La bulle de filtre"]},
+{ch:"Ch3",answer:"Le discours de haine en ligne",clues:["Je suis defini par l'UNESCO et le Conseil de l'Europe.","Je peux inclure la designation de boucs emissaires, les stereotypes et la stigmatisation.","L'article 20 du Pacte international relatif aux droits civils et politiques m'interdit.","Les Etats sont tenus d'interdire mes formes les plus graves."],options:["Le discours de haine en ligne","La cybercriminalite","Le cyberharcelement","La diffamation","Le trolling"]},
+{ch:"Ch3",answer:"UNIA",clues:["Je suis une institution publique independante belge.","Je lutte contre la discrimination et defends l'egalite des chances.","Je denonce les risques de discrimination lies a l'IA.","Je formule 6 limites a la liberte d'expression."],options:["UNIA","La CNIL","Le CSEM","L'APD","Safeonweb"]},
+{ch:"Ch3",answer:"Les 12 composantes de l'identite numerique",clues:["Je suis identifie par Wauters de l'Academie de Lyon.","Je comprends les coordonnees, l'avatar, la certification, la reputation.","Je couvre aussi le reseau, la profession, l'expression, la publication et l'opinion.","Je constitue le profil complet d'une personne dans l'espace numerique."],options:["Les 12 composantes de l'identite numerique","Les 10 domaines du niveau C","Les 5 domaines DigComp","Les 8 droits RGPD","Les 6 principes du RGPD"]},
+{ch:"Ch3",answer:"L'adresse IP",clues:["Je suis basee sur un protocole permettant aux ordinateurs de communiquer.","Je suis unique pour chaque appareil sur le reseau.","Je suis systematiquement enregistree par tous les serveurs.","Grace a moi, il n'y a pas d'anonymat sur Internet."],options:["L'adresse IP","Le cookie","Le DNS","Le MAC address","L'URL"]},
+{ch:"Ch3",answer:"La navigation privee",clues:["Je permets de naviguer en toute confidentialite relative.","Je supprime les cookies et l'historique a la fermeture de la fenetre.","Je n'offre pas de protection absolue contre le suivi des sites web.","Mon fournisseur d'acces Internet peut toujours voir mon activite."],options:["La navigation privee","Le VPN","Le proxy","Le navigateur Tor","Le mode incognito securise"]},
+{ch:"Ch4",answer:"Le phishing",clues:["Mon nom francais est 'hameconnage'.","Je suis defini par la CNIL.","J'usurpe l'identite d'une organisation legitime par courriel.","Mon objectif est d'amener la victime a divulguer des informations confidentielles."],options:["Le phishing","Le smishing","Le vishing","Le quishing","Le scamming"]},
+{ch:"Ch4",answer:"Le smishing",clues:["Je suis defini par IBM.","Je suis une contraction de SMS et phishing.","J'utilise les messages SMS ou les applications de messagerie.","Les utilisateurs sont souvent moins mefiants vis-a-vis de mon canal."],options:["Le smishing","Le vishing","Le phishing","Le quishing","Le whaling"]},
+{ch:"Ch4",answer:"Le vishing",clues:["Je suis une contraction de 'voice' et 'phishing'.","Je suis une arnaque telephonique.","L'attaquant se fait passer pour une banque ou une administration.","Dans un exemple, l'arnaqueur achete une publicite Google pour usurper le numero de PayPal."],options:["Le vishing","Le smishing","Le phishing","Le spoofing","Le scamming"]},
+{ch:"Ch4",answer:"Le quishing",clues:["Je suis recense par Safeonweb.be.","Je suis une contraction de QR code et phishing.","La victime scanne un code qui la redirige vers un site frauduleux.","Mon efficacite tient au fait qu'on ne peut pas lire visuellement le lien cache."],options:["Le quishing","Le phishing","Le smishing","Le vishing","Le pharming"]},
+{ch:"Ch4",answer:"Un ransomware",clues:["Mon nom francais est 'rancongiciel'.","Je chiffre les donnees de la victime.","Je demande le paiement d'une rancon en cryptomonnaie.","WannaCry (2017) est l'un de mes exemples les plus mediatises."],options:["Un ransomware","Un spyware","Un virus","Un cheval de Troie","Un adware"]},
+{ch:"Ch4",answer:"Un VPN",clues:["Je cree un tunnel chiffre entre l'appareil et un serveur distant.","Je masque l'adresse IP reelle de l'utilisateur.","Je suis indispensable sur les reseaux WiFi publics.","Selon Kaspersky, les versions gratuites sont souvent deconseillees."],options:["Un VPN","Un proxy","Un firewall","Un antivirus","Un DNS securise"]},
+{ch:"Ch4",answer:"La nomophobie",clues:["Je suis une peur irrationnelle.","Mon questionnaire de reference est le NMP-Q.","Je designe la peur d'etre sans son telephone mobile.","Mon nom vient de 'No Mobile Phone Phobia'."],options:["La nomophobie","Le FOMO","L'addiction au smartphone","La technophobie","La cyberchondrie"]},
+{ch:"Ch4",answer:"Le FOMO",clues:["Mon acronyme signifie Fear of Missing Out.","Je suis la peur de rater quelque chose d'important.","Mon contraire est le JOMO (Joy of Missing Out).","Je pousse les utilisateurs a verifier constamment leurs reseaux sociaux."],options:["Le FOMO","La nomophobie","Le doomscrolling","L'anxiete sociale","Le FOBO"]},
+{ch:"Ch4",answer:"Le catfishing",clues:["Mon nom vient d'un documentaire de 2010 et d'une serie MTV.","Je consiste a creer une fausse identite en ligne.","Mes motivations peuvent etre financieres, de vengeance ou psychologiques.","La recherche d'images inversee permet de me detecter."],options:["Le catfishing","Le broutage","Le phishing","Le romance scam","L'usurpation d'identite"]},
+{ch:"Ch4",answer:"Le spear phishing",clues:["Je suis aussi appele 'arnaque au president'.","Contrairement au phishing de masse, je vise une personne specifique.","L'attaquant usurpe l'identite du dirigeant d'une entreprise.","Je requiers une preparation minutieuse et j'exploite l'autorite hierarchique."],options:["Le spear phishing","Le whaling","Le phishing","Le vishing","Le pretexting"]},
+{ch:"Ch4",answer:"Le whaling",clues:["Mon nom signifie litteralement 'chasse a la baleine'.","Je suis issu d'IBM.","Je cible exclusivement des personnes a tres haute valeur (CEO, CFO).","Les attaquants investissent des semaines en renseignements (OSINT)."],options:["Le whaling","Le spear phishing","Le phishing","L'arnaque au president","Le CEO fraud"]},
+{ch:"Ch4",answer:"Le broutage",clues:["Mon terme est issu du francais d'Afrique de l'Ouest.","Je designe l'escroquerie sentimentale en ligne (Adou, 2022).","Mon processus comprend seduction, creation de dependance, puis demande d'argent.","La fausse convocation judiciaire est l'une de mes variantes."],options:["Le broutage","Le catfishing","Le romance scam","Le scamming","Le vishing"]},
+{ch:"Ch4",answer:"Un cheval de Troie",clues:["Je me dissimule dans un programme apparemment legitime.","Contrairement a un virus, je ne me reproduis pas.","Une fois installe, je peux ouvrir une backdoor ou enregistrer les frappes clavier.","Mon nom fait reference a un mythe grec celebre."],options:["Un cheval de Troie","Un virus","Un ransomware","Un spyware","Un worm"]},
+{ch:"Ch4",answer:"La comparaison sociale defavorable",clues:["Ma theorie originale est de Festinger (1954).","Fourquet-Courbet et Courbet (2017) m'ont etendue aux reseaux sociaux.","Haferkamp et Kramer (2011) ont montre que je baisse l'humeur.","Lee (2014) m'a lie aux symptomes depressifs chez les adolescents sur Facebook."],options:["La comparaison sociale defavorable","Le FOMO","La dysmorphophobie","L'effet Dunning-Kruger","Le narcissisme numerique"]},
+{ch:"Ch4",answer:"Safeonweb.be",clues:["Je suis la plateforme officielle belge de cybersecurite.","Je suis geree par le Centre pour la Cybersecurite Belgique (CCB).","On peut me signaler des messages suspects via suspect@safeonweb.be.","Je formule 5 conseils fondamentaux pour les mots de passe."],options:["Safeonweb.be","UNIA","La CNIL","Le CSEM","L'APD"]},
+{ch:"Ch5",answer:"Le RGPD",clues:["Je suis entre en vigueur en mai 2018.","Mon objectif est de mieux proteger les donnees a caractere personnel en Europe.","Je prevois des sanctions allant jusqu'a 20 millions d'euros ou 4% du CA.","Je confere 8 droits fondamentaux aux personnes concernees."],options:["Le RGPD","La Loi Vie privee (1992)","La Directive 95/46/CE","Le Digital Services Act","La CNIL"]},
+{ch:"Ch5",answer:"Les donnees sensibles",clues:["Je suis aussi appelees 'donnees particulieres'.","Mon traitement est en principe interdit par le RGPD.","Je comprends l'origine ethnique, les opinions politiques et l'orientation sexuelle.","Les donnees de sante mentale font partie de moi."],options:["Les donnees sensibles","Les donnees personnelles","Les donnees biometriques","Les donnees confidentielles","Les donnees critiques"]},
+{ch:"Ch5",answer:"Le droit a la portabilite",clues:["Je suis l'un des 8 droits du RGPD.","Je permets de recuperer ses donnees dans un format structure.","Je permets de transmettre ses donnees a un autre responsable de traitement.","Par exemple, changer d'application de streaming en emportant ses donnees."],options:["Le droit a la portabilite","Le droit d'acces","Le droit a l'oubli","Le droit de rectification","Le droit d'opposition"]},
+{ch:"Ch5",answer:"Le DPO",clues:["Je suis une grande nouveaute du RGPD.","Mon acronyme signifie Data Protection Officer.","Ma designation est obligatoire dans les organismes publics.","A l'UMONS, je suis Mme Graciela Schiffino Pappaterra."],options:["Le DPO","Le RT","Le sous-traitant","Le CISO","Le CTO"]},
+{ch:"Ch5",answer:"Le droit a l'oubli",clues:["Je suis aussi appele 'droit d'effacement'.","Les donnees doivent etre supprimees dans les meilleurs delais.","Si les donnees ont ete transmises a des tiers, ils doivent aussi les effacer.","Je ne s'applique pas integralement aux donnees medicales (conservation 30 ans)."],options:["Le droit a l'oubli","Le droit a la portabilite","Le droit d'opposition","Le droit de rectification","Le droit de limitation"]},
+{ch:"Ch5",answer:"Les 6 principes du traitement RGPD",clues:["Je comprends la liceite, loyaute et transparence.","Je comprends la minimisation des donnees et l'exactitude.","Je comprends la limitation de la conservation.","Je suis defini par l'INAMI (2019)."],options:["Les 6 principes du traitement RGPD","Les 8 droits RGPD","Les 4 acteurs RGPD","Les 10 etapes DMP","Les 5 obligations RGPD"]},
+{ch:"Ch5",answer:"30 ans",clues:["Je suis une duree legale de conservation.","Je concerne le dossier patient adulte.","Le droit a l'oubli ne s'applique pas completement a cause de moi.","Je commence a courir apres le dernier contact avec le patient."],options:["30 ans","10 ans","20 ans","50 ans","15 ans"]},
+{ch:"Ch6",answer:"Les fake news",clues:["Mon terme est utilise a l'echelle mondiale depuis fin 2016.","Philipps et al. (2020) me definissent comme des articles intentionnellement trompeurs.","Je reprends les codes du journalisme pour paraitre legitime.","On me cree pour l'argent, l'ideologie politique ou l'humour."],options:["Les fake news","La desinformation","La mesinformation","L'intox","La propagande"]},
+{ch:"Ch6",answer:"La desinformation",clues:["Je suis une information fausse communiquee comme vraie.","Mon objectif est de manipuler, tromper ou nuire.","Interface3.Namur (2018) et le Gouvernement du Canada me definissent.","Je me distingue de la mesinformation par mon intention malveillante."],options:["La desinformation","La mesinformation","La rumeur","Les fake news","L'intox"]},
+{ch:"Ch6",answer:"La mesinformation",clues:["Je suis definie par le Gouvernement du Canada.","Je diffuse de la fausse information sans mauvaise intention.","La personne qui me diffuse pense que l'information est vraie.","Lisa qui affirme faussement que les plantes n'ont pas besoin d'eau en hiver est un exemple."],options:["La mesinformation","La desinformation","La rumeur","L'erreur factuelle","L'intox"]},
+{ch:"Ch6",answer:"Le deepfake",clues:["Mon autre nom est 'hypertrucage' (Dahmani, 2023).","Je consiste a truquer une photo ou une video.","Je m'appuie sur une base de donnees de vraies images et videos.","L'IA generative me rend de plus en plus realiste et dangereux."],options:["Le deepfake","Le montage photo","Le photoshopping","La retouche video","Le face swap"]},
+{ch:"Ch6",answer:"Le CSEM",clues:["Je suis le Conseil Superieur de l'Education aux Medias.","Ma creation resulte du Decret du 5 juin 2008.","Je promeus l'education aux medias en Federation Wallonie-Bruxelles.","Je lutte contre les stereotypes vehicules par les medias."],options:["Le CSEM","UNIA","L'APD","Le CSA","Le CREF"]},
+{ch:"Ch6",answer:"Le piege a clics (clickbait)",clues:["Mon nom anglais est 'clickbait'.","Je suis defini par l'Office quebecois de la langue francaise.","Je suis un hyperlien au titre provocant qui mene a un contenu decevant.","Je suis utilise pour augmenter le trafic et les revenus publicitaires."],options:["Le piege a clics (clickbait)","Les fake news","La desinformation","Le spam","La publicite native"]},
+{ch:"Ch6",answer:"Les 5 lois de l'UNESCO pour l'EMI",clues:["Je suis inspiree des 5 lois de la bibliotheconomie de Ranganathan (1931).","Ma 3e loi affirme que l'information n'est pas neutre.","Ma 5e loi dit que l'EMI est un processus continu.","Ma 2e loi affirme que chaque citoyen est createur d'information."],options:["Les 5 lois de l'UNESCO pour l'EMI","Les 5 piliers du niveau B","Les 5 domaines DigComp","Les 5 bonnes pratiques de securite","Les 5 conseils Safeonweb"]},
+{ch:"Ch6",answer:"La theorie du complot",clues:["Fenster (1999) me definit, cite par Giry (2019).","Je postule qu'un groupe omnipotent controle secretement l'ordre social.","Laura et les reptiliens illustrent mon fonctionnement.","Je suis souvent alimentee par la desinformation et les fake news."],options:["La theorie du complot","La rumeur","La propagande","La desinformation","L'intox"]},
+{ch:"Ch6",answer:"La propagande",clues:["Auge (2007) me definit comme une strategie de communication de masse.","Mon objectif est d'influencer l'opinion et les actions au moyen d'informations partiales.","Un gouvernement diffusant uniquement des chiffres favorables en est un exemple.","Je cible l'adhesion de la population par la selection d'information."],options:["La propagande","La desinformation","L'intox","Les fake news","Le lobbying"]},
+{ch:"Ch6",answer:"L'information orientee",clues:["Je presente des faits de maniere incomplete ou deformee.","Interface3.Namur (2018) me definit.","Je ne montre qu'une facette de la realite.","Un reportage attribuant l'absenteisme uniquement au manque de motivation est un exemple."],options:["L'information orientee","La desinformation","La mesinformation","La propagande","Le biais mediatique"]},
+{ch:"Ch2",answer:"Le cMOOC",clues:["Le 'c' dans mon nom signifie 'connectiviste'.","Je suis base sur la co-construction des savoirs.","Je m'oppose au xMOOC qui est transmissif.","Je favorise les interactions entre apprenants plutot que les videos descendantes."],options:["Le cMOOC","Le xMOOC","Le SPOC","Le CLOM","Le blended learning"]},
+{ch:"Ch2",answer:"70% du contenu numerique mondial inaccessible",clues:["Je suis un chiffre choc cite par Contentsquare (2021).","Je concerne l'accessibilite du contenu numerique.","Je suis illustre par la metaphore de la soupe et des baguettes.","Ce pourcentage montre que l'accessibilite n'est pas un 'plus' optionnel."],options:["70% du contenu numerique mondial inaccessible","50% des sites web","32% des Wallons","64% des Europeens","90% des administrations"]},
+{ch:"Ch3",answer:"Le revenge porn",clues:["Je consiste a partager des images intimes sans consentement.","Je suis une forme grave de cyberviolence.","Je touche particulierement les anciens partenaires amoureux.","Je peux avoir des consequences devastatrices sur la reputation de la victime."],options:["Le revenge porn","Le sexting","Le happy slapping","Le doxing","Le sextortion"]},
+{ch:"Ch3",answer:"Le grooming",clues:["Je suis un processus de manipulation d'un mineur.","Un adulte etablit progressivement une relation de confiance en ligne.","Mon objectif final est l'exploitation sexuelle.","Je peux se produire via les reseaux sociaux et les jeux en ligne."],options:["Le grooming","Le catfishing","Le broutage","Le cyberstalking","Le trolling"]},
+{ch:"Ch4",answer:"L'authentification a deux facteurs (2FA)",clues:["Je suis le 1er conseil de Safeonweb.be pour les mots de passe.","J'ajoute une couche de securite supplementaire au mot de passe.","Meme si le mot de passe est compromis, l'acces reste impossible sans moi.","Je peux prendre la forme d'un code SMS ou d'une application d'authentification."],options:["L'authentification a deux facteurs (2FA)","Le gestionnaire de mots de passe","Le chiffrement","La biometrie","Le captcha"]},
+{ch:"Ch5",answer:"17,89 euros",clues:["Je suis une valeur monetaire estimee.","Je represente la valeur moyenne des donnees personnelles d'un individu.","Je suis un chiffre souvent cite pour sensibiliser a la protection des donnees.","Je montre que les donnees personnelles ont une valeur economique concrete."],options:["17,89 euros","5 euros","50 euros","100 euros","1,89 euros"]},
+{ch:"Ch1",answer:"L'EMI",clues:["Mon acronyme signifie Education aux Medias et a l'Information.","Je suis aussi appelee Media and Information Literacy (MIL).","Je suis complementaire a l'ECD.","Je prepare les citoyens a exercer leurs droits a la liberte d'expression et d'information."],options:["L'EMI","L'ECD","L'ECN","Le DigComp","Le CSEM"]},
+{ch:"Ch4",answer:"Le ghosting",clues:["Je designe la rupture brutale de toute communication.","La personne disparait sans explication de la vie de l'autre.","Je cause de la detresse psychologique chez la personne abandonnee.","Je suis facilite par les technologies de communication numerique."],options:["Le ghosting","Le breadcrumbing","Le benching","Le slow fading","Le orbiting"]}
+];
+
+const TOTAL_Q=15;
+let pool,current,score,qIndex,clueIdx,review;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function init(){
+  pool=shuffle([...CASES]).slice(0,TOTAL_Q);
+  current=null;score=0;qIndex=0;clueIdx=0;review=[];
+  showStart();
+}
+
+function showStart(){
+  document.getElementById('app').innerHTML=`
+    <h1>Qui suis-je ?</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique (ECN)</p>
+    <div class="start-screen">
+      <div class="start-icon">&#129300;</div>
+      <h2>Devine le concept !</h2>
+      <p>Des indices te sont reveles un par un. Moins tu utilises d'indices, plus tu gagnes de points !</p>
+      <ul class="rules">
+        <li>${TOTAL_Q} questions tirees aleatoirement parmi ${CASES.length}</li>
+        <li>4 indices par question, reveles progressivement</li>
+        <li>5 choix possibles a chaque question</li>
+        <li>Points : 1er indice = 4 pts, 2e = 3 pts, 3e = 2 pts, 4e = 1 pt</li>
+      </ul>
+      <button class="btn btn-primary" onclick="startGame()">Commencer</button>
+    </div>`;
+}
+
+function startGame(){qIndex=0;score=0;review=[];nextQuestion();}
+
+function nextQuestion(){
+  if(qIndex>=pool.length){showResults();return;}
+  current=pool[qIndex];clueIdx=0;
+  render();
+}
+
+function render(){
+  const c=current;
+  const pct=((qIndex)/pool.length*100).toFixed(0);
+  let cluesHtml='';
+  for(let i=0;i<=clueIdx&&i<c.clues.length;i++){
+    cluesHtml+=`<li class="clue-item"><span class="num">#${i+1}</span>${c.clues[i]}</li>`;
+  }
+  let optionsHtml=c.options.map(o=>`<button class="option-btn" onclick="answer('${o.replace(/'/g,"\\'")}')">${o}</button>`).join('');
+  const canReveal=clueIdx<c.clues.length-1;
+
+  document.getElementById('app').innerHTML=`
+    <h1>Qui suis-je ?</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <div class="score-badge">Score : <span>${score}</span> / ${pool.length*4}</div>
+    <div class="progress-wrap">
+      <div class="progress-info"><span>Question ${qIndex+1}/${pool.length}</span><span>${pct}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="case-card">
+      <span class="ch-badge">${c.ch}</span>
+      <div class="question-header">
+        <div class="question-icon">&#129300;</div>
+        <div><div class="question-title">Qui suis-je ?</div><div style="color:var(--muted);font-size:.85rem">${clueIdx+1}/${c.clues.length} indice(s) revele(s)</div></div>
+      </div>
+      <ul class="clues-list">${cluesHtml}</ul>
+      <div class="options">${optionsHtml}</div>
+      ${canReveal?`<div class="btn-row"><button class="btn btn-secondary" onclick="revealClue()">&#128269; Indice suivant</button></div>`:''}
+    </div>`;
+}
+
+function revealClue(){
+  if(clueIdx<current.clues.length-1){clueIdx++;render();}
+}
+
+function answer(choice){
+  const c=current;
+  const correct=choice===c.answer;
+  const pts=correct?Math.max(1,c.clues.length-clueIdx):0;
+  if(correct)score+=pts;
+  review.push({q:c.answer,ch:c.ch,correct,pts,cluesUsed:clueIdx+1});
+
+  // show feedback
+  document.querySelectorAll('.option-btn').forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===c.answer)b.classList.add('correct');
+    if(b.textContent===choice&&!correct)b.classList.add('wrong');
+  });
+  const fbDiv=document.createElement('div');
+  fbDiv.className='feedback '+(correct?'correct':'wrong');
+  fbDiv.textContent=correct?`Bravo ! +${pts} point(s) (${clueIdx+1} indice(s) utilise(s))`:`Mauvaise reponse ! C'etait : ${c.answer}`;
+  document.querySelector('.case-card').appendChild(fbDiv);
+
+  const row=document.createElement('div');
+  row.className='btn-row';
+  row.innerHTML=`<button class="btn btn-primary" onclick="nextQ()">Suivant &rarr;</button>`;
+  document.querySelector('.case-card').appendChild(row);
+}
+
+function nextQ(){qIndex++;nextQuestion();}
+
+function showResults(){
+  const pct=(score/(pool.length*4)*100).toFixed(0);
+  const stars=pct>=80?'&#11088;&#11088;&#11088;':pct>=50?'&#11088;&#11088;':'&#11088;';
+  let revHtml=review.map(r=>{
+    const cls=r.correct?(r.pts>=3?'good':'ok'):'bad';
+    return `<div class="review-item"><div><span class="ch-badge" style="margin-right:8px">${r.ch}</span><span class="ri-name">${r.q}</span></div><span class="ri-pts ${cls}">${r.correct?'+'+r.pts:'0'} pt${r.pts>1?'s':''} (${r.cluesUsed} indice${r.cluesUsed>1?'s':''})</span></div>`;
+  }).join('');
+  document.getElementById('app').innerHTML=`
+    <h1>Qui suis-je ?</h1>
+    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <div class="results-card">
+      <h2>Resultats</h2>
+      <div class="final-score">${score} / ${pool.length*4}</div>
+      <div class="final-sub">${pct}% de reussite</div>
+      <div class="stars" style="text-align:center;font-size:1.5rem;margin-bottom:14px">${stars}</div>
+      ${revHtml}
+      <div class="btn-row" style="justify-content:center;margin-top:20px">
+        <button class="btn btn-primary" onclick="init()">&#128260; Rejouer</button>
+      </div>
+    </div>`;
+}
+
+init();
+</script>
+</body>
+</html>
