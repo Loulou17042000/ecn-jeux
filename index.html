@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECN - Mini-jeux de revision</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f1117;color:#e0e0e8;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:30px 20px;}
+h1{font-size:2rem;margin-bottom:8px;background:linear-gradient(135deg,#6c63ff,#ff6584);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;}
+.subtitle{color:#8888a0;font-size:1rem;margin-bottom:40px;text-align:center;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:900px;width:100%;}
+.card{background:#1a1d27;border:1px solid #2a2d3e;border-radius:16px;padding:28px 24px;text-decoration:none;color:#e0e0e8;transition:all .3s;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6c63ff,#ff6584);opacity:0;transition:opacity .3s;}
+.card:hover{transform:translateY(-4px);border-color:#6c63ff;box-shadow:0 8px 30px rgba(108,99,255,.15);}
+.card:hover::before{opacity:1;}
+.card-icon{font-size:2.5rem;margin-bottom:14px;}
+.card-title{font-size:1.2rem;font-weight:700;margin-bottom:8px;color:#fff;}
+.card-desc{color:#8888a0;font-size:.9rem;line-height:1.5;}
+.card-count{display:inline-block;margin-top:12px;background:#6c63ff22;color:#6c63ff;padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:600;}
+footer{margin-top:50px;color:#555;font-size:.85rem;text-align:center;}
+</style>
+</head>
+<body>
+<h1>Education a la Citoyennete Numerique</h1>
+<p class="subtitle">Mini-jeux de revision - BA2 Psychologie UMONS</p>
+<div class="grid">
+  <a class="card" href="qui_suis_je_ecn.html"><div class="card-icon">&#128269;</div><div class="card-title">Qui suis-je ?</div><div class="card-desc">Des indices sont reveles un par un. Identifie le concept le plus vite possible.</div><span class="card-count">69 questions</span></a>
+  <a class="card" href="tri_express_ecn.html"><div class="card-icon">&#127919;</div><div class="card-title">Tri Express</div><div class="card-desc">Classe les elements dans les bonnes categories. 8 niveaux thematiques.</div><span class="card-count">91 items - 8 niveaux</span></a>
+  <a class="card" href="qcm_millionaire_ecn.html"><div class="card-icon">&#128176;</div><div class="card-title">QCM Millionnaire</div><div class="card-desc">15 questions de difficulte croissante. 3 jokers strategiques.</div><span class="card-count">73 questions</span></a>
+  <a class="card" href="memory_ecn.html"><div class="card-icon">&#129504;</div><div class="card-title">Memory</div><div class="card-desc">Retrouve les paires terme/definition cachees sous les cartes.</div><span class="card-count">60 paires</span></a>
+  <a class="card" href="intrus_ecn.html"><div class="card-icon">&#128683;</div><div class="card-title">Intrus</div><div class="card-desc">Parmi 4-5 elements, trouve celui qui n'appartient pas.</div><span class="card-count">45 questions</span></a>
+  <a class="card" href="vignette_rush_ecn.html"><div class="card-icon">&#9889;</div><div class="card-title">Vignette Rush</div><div class="card-desc">Lis la situation et identifie le bon concept en 30 secondes.</div><span class="card-count">57 vignettes</span></a>
+</div>
+<footer>ECN - Karim Boumazguida - UMONS 2024-2025</footer>
+</body>
+</html>
