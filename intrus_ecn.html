@@ -111,6 +111,16 @@ const QUESTIONS=[
 const TOTAL_Q=15;
 let pool,qIdx,score,review;
 
+// Chapter filter from URL
+const urlParams = new URLSearchParams(window.location.search);
+const chFilter = urlParams.get('ch');
+let filteredQUESTIONS = QUESTIONS;
+if(chFilter) {
+  const chs = chFilter.split(',').map(c => 'Ch'+c.trim());
+  filteredQUESTIONS = QUESTIONS.filter(q => chs.includes(q.ch));
+}
+const chLabel = chFilter ? 'Chapitre' + (chFilter.includes(',') ? 's ' : ' ') + chFilter : 'Tous les chapitres';
+
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
 function init(){showStart();}
@@ -118,13 +128,13 @@ function init(){showStart();}
 function showStart(){
   document.getElementById('app').innerHTML=`
     <h1>Trouve l'intrus !</h1>
-    <p class="subtitle">Education a la Citoyennete Numerique (ECN)</p>
+    <p class="subtitle">Education a la Citoyennete Numerique (ECN) — ${chLabel}</p>
     <div class="start-screen">
       <div class="start-icon">&#128065;</div>
       <h2>Repere l'element qui n'appartient pas au groupe !</h2>
       <p>4 a 5 elements affiches, un seul est l'intrus. Clique dessus !</p>
       <ul class="rules">
-        <li>${TOTAL_Q} questions tirees parmi ${QUESTIONS.length}</li>
+        <li>${Math.min(TOTAL_Q,filteredQUESTIONS.length)} questions tirees parmi ${filteredQUESTIONS.length}</li>
         <li>+1 point par bonne reponse</li>
         <li>Explication detaillee apres chaque reponse</li>
       </ul>
@@ -133,7 +143,7 @@ function showStart(){
 }
 
 function startGame(){
-  pool=shuffle([...QUESTIONS]).slice(0,TOTAL_Q);
+  pool=shuffle([...filteredQUESTIONS]).slice(0,Math.min(TOTAL_Q,filteredQUESTIONS.length));
   qIdx=0;score=0;review=[];
   nextQ();
 }

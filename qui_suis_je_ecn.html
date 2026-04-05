@@ -151,10 +151,20 @@ const CASES=[
 const TOTAL_Q=15;
 let pool,current,score,qIndex,clueIdx,review;
 
+// Chapter filter from URL
+const urlParams = new URLSearchParams(window.location.search);
+const chFilter = urlParams.get('ch');
+let filteredCASES = CASES;
+if(chFilter) {
+  const chs = chFilter.split(',').map(c => 'Ch'+c.trim());
+  filteredCASES = CASES.filter(q => chs.includes(q.ch));
+}
+const chLabel = chFilter ? 'Chapitre' + (chFilter.includes(',') ? 's ' : ' ') + chFilter : 'Tous les chapitres';
+
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
 function init(){
-  pool=shuffle([...CASES]).slice(0,TOTAL_Q);
+  pool=shuffle([...filteredCASES]).slice(0,Math.min(TOTAL_Q,filteredCASES.length));
   current=null;score=0;qIndex=0;clueIdx=0;review=[];
   showStart();
 }
@@ -162,13 +172,13 @@ function init(){
 function showStart(){
   document.getElementById('app').innerHTML=`
     <h1>Qui suis-je ?</h1>
-    <p class="subtitle">Education a la Citoyennete Numerique (ECN)</p>
+    <p class="subtitle">Education a la Citoyennete Numerique (ECN) — ${chLabel}</p>
     <div class="start-screen">
       <div class="start-icon">&#129300;</div>
       <h2>Devine le concept !</h2>
       <p>Des indices te sont reveles un par un. Moins tu utilises d'indices, plus tu gagnes de points !</p>
       <ul class="rules">
-        <li>${TOTAL_Q} questions tirees aleatoirement parmi ${CASES.length}</li>
+        <li>${pool.length} questions tirees aleatoirement parmi ${filteredCASES.length}</li>
         <li>4 indices par question, reveles progressivement</li>
         <li>5 choix possibles a chaque question</li>
         <li>Points : 1er indice = 4 pts, 2e = 3 pts, 3e = 2 pts, 4e = 1 pt</li>

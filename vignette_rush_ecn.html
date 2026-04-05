@@ -129,6 +129,16 @@ const TOTAL_Q=15;
 const TIME_LIMIT=30;
 let pool,qIdx,score,review,timerVal,timerRef;
 
+// Chapter filter from URL
+const urlParams = new URLSearchParams(window.location.search);
+const chFilter = urlParams.get('ch');
+let filteredVIGNETTES = VIGNETTES;
+if(chFilter) {
+  const chs = chFilter.split(',').map(c => 'Ch'+c.trim());
+  filteredVIGNETTES = VIGNETTES.filter(q => chs.includes(q.ch));
+}
+const chLabel = chFilter ? 'Chapitre' + (chFilter.includes(',') ? 's ' : ' ') + chFilter : 'Tous les chapitres';
+
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
 function init(){showStart();}
@@ -137,13 +147,13 @@ function showStart(){
   if(timerRef)clearInterval(timerRef);
   document.getElementById('app').innerHTML=`
     <h1>Vignette Rush</h1>
-    <p class="subtitle">Education a la Citoyennete Numerique (ECN)</p>
+    <p class="subtitle">Education a la Citoyennete Numerique (ECN) — ${chLabel}</p>
     <div class="start-screen">
       <div class="start-icon">&#9889;</div>
       <h2>Identifie le concept en situation !</h2>
       <p>Lis la vignette clinique et identifie le concept correct en moins de ${TIME_LIMIT} secondes !</p>
       <ul class="rules">
-        <li>${TOTAL_Q} vignettes tirees parmi ${VIGNETTES.length}</li>
+        <li>${Math.min(TOTAL_Q,filteredVIGNETTES.length)} vignettes tirees parmi ${filteredVIGNETTES.length}</li>
         <li>${TIME_LIMIT} secondes par vignette</li>
         <li>+1 point par bonne reponse</li>
         <li>Bonus si reponse rapide (< 10s)</li>
@@ -153,7 +163,7 @@ function showStart(){
 }
 
 function startGame(){
-  pool=shuffle([...VIGNETTES]).slice(0,TOTAL_Q);
+  pool=shuffle([...filteredVIGNETTES]).slice(0,Math.min(TOTAL_Q,filteredVIGNETTES.length));
   qIdx=0;score=0;review=[];
   nextQ();
 }

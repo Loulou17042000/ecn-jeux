@@ -117,7 +117,17 @@ const ALL_PAIRS=[
 ];
 
 const PAIRS_PER_ROUND=8;
-let cards,flipped,matched,moves,timer,seconds,timerInterval;
+let cards,flipped,matched,moves,timer,seconds,timerInterval,activePairsCount;
+
+// Chapter filter from URL
+const urlParams = new URLSearchParams(window.location.search);
+const chFilter = urlParams.get('ch');
+let filteredPAIRS = ALL_PAIRS;
+if(chFilter) {
+  const chs = chFilter.split(',').map(c => 'Ch'+c.trim());
+  filteredPAIRS = ALL_PAIRS.filter(q => chs.includes(q.ch));
+}
+const chLabel = chFilter ? 'Chapitre' + (chFilter.includes(',') ? 's ' : ' ') + chFilter : 'Tous les chapitres';
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
@@ -126,11 +136,11 @@ function init(){showStart();}
 function showStart(){
   document.getElementById('app').innerHTML=`
     <h1>Memory ECN</h1>
-    <p class="subtitle">Education a la Citoyennete Numerique</p>
+    <p class="subtitle">Education a la Citoyennete Numerique — ${chLabel}</p>
     <div class="start-screen">
       <div class="start-icon">&#129504;</div>
       <h2>Trouve les paires !</h2>
-      <p>Associe chaque terme a sa definition. ${ALL_PAIRS.length} paires possibles, ${PAIRS_PER_ROUND} par manche.</p>
+      <p>Associe chaque terme a sa definition. ${filteredPAIRS.length} paires possibles, ${Math.min(PAIRS_PER_ROUND,filteredPAIRS.length)} par manche.</p>
       <ul class="rules">
         <li>${PAIRS_PER_ROUND} paires par manche (${PAIRS_PER_ROUND*2} cartes)</li>
         <li>Retourne 2 cartes : terme + definition correspondante</li>
@@ -142,7 +152,8 @@ function showStart(){
 }
 
 function startGame(){
-  const selected=shuffle([...ALL_PAIRS]).slice(0,PAIRS_PER_ROUND);
+  activePairsCount=Math.min(PAIRS_PER_ROUND,filteredPAIRS.length);
+  const selected=shuffle([...filteredPAIRS]).slice(0,activePairsCount);
   cards=[];
   selected.forEach((p,i)=>{
     cards.push({id:i,type:'term',text:p.term,ch:p.ch,pairId:i});
@@ -180,7 +191,7 @@ function renderBoard(){
     <p class="subtitle">Education a la Citoyennete Numerique</p>
     <div class="stats">
       <div class="stat">Coups : <span>${moves}</span></div>
-      <div class="stat">Paires : <span>${matched.length}/${PAIRS_PER_ROUND}</span></div>
+      <div class="stat">Paires : <span>${matched.length}/${activePairsCount}</span></div>
       <div class="stat">Temps : <span id="timer">${formatTime(seconds)}</span></div>
     </div>
     <div class="board cols-${cols}">${boardHtml}</div>`;
@@ -198,7 +209,7 @@ function flipCard(i){
       matched.push(c1.pairId);
       flipped=[];
       renderBoard();
-      if(matched.length===PAIRS_PER_ROUND){
+      if(matched.length===activePairsCount){
         clearInterval(timerInterval);
         setTimeout(showResults,600);
       }

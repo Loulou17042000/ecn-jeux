@@ -94,24 +94,34 @@ const LEVELS=[
 
 let lvlIdx,score,totalItems,correctCount,placements,selectedItem;
 
+// Chapter filter from URL
+const urlParams = new URLSearchParams(window.location.search);
+const chFilter = urlParams.get('ch');
+let filteredLEVELS = LEVELS;
+if(chFilter) {
+  const chs = chFilter.split(',').map(c => 'Ch'+c.trim());
+  filteredLEVELS = LEVELS.filter(l => chs.includes(l.ch));
+}
+const chLabel = chFilter ? 'Chapitre' + (chFilter.includes(',') ? 's ' : ' ') + chFilter : 'Tous les chapitres';
+
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
 function init(){
   lvlIdx=0;score=0;totalItems=0;correctCount=0;
-  LEVELS.forEach(l=>totalItems+=l.items.length);
+  filteredLEVELS.forEach(l=>totalItems+=l.items.length);
   showStart();
 }
 
 function showStart(){
   document.getElementById('app').innerHTML=`
     <h1>Tri Express</h1>
-    <p class="subtitle">Education a la Citoyennete Numerique (ECN)</p>
+    <p class="subtitle">Education a la Citoyennete Numerique (ECN) — ${chLabel}</p>
     <div class="start-screen">
       <div class="start-icon">&#128230;</div>
       <h2>Trie les elements !</h2>
-      <p>Glisse (ou clique) chaque element dans la bonne categorie. ${LEVELS.length} niveaux progressifs !</p>
+      <p>Glisse (ou clique) chaque element dans la bonne categorie. ${filteredLEVELS.length} niveaux progressifs !</p>
       <ul class="rules">
-        <li>${LEVELS.length} niveaux couvrant tous les chapitres</li>
+        <li>${filteredLEVELS.length} niveaux couvrant les chapitres selectionnes</li>
         <li>${totalItems} elements au total a trier</li>
         <li>Glisse-deposer ou clic pour selectionner + clic sur categorie</li>
         <li>+1 point par element correctement place</li>
@@ -123,14 +133,14 @@ function showStart(){
 function startGame(){lvlIdx=0;score=0;correctCount=0;nextLevel();}
 
 function nextLevel(){
-  if(lvlIdx>=LEVELS.length){showResults();return;}
+  if(lvlIdx>=filteredLEVELS.length){showResults();return;}
   placements={};selectedItem=null;
   renderLevel();
 }
 
 function renderLevel(){
-  const lv=LEVELS[lvlIdx];
-  const pct=(lvlIdx/LEVELS.length*100).toFixed(0);
+  const lv=filteredLEVELS[lvlIdx];
+  const pct=(lvlIdx/filteredLEVELS.length*100).toFixed(0);
   const shuffledItems=shuffle([...lv.items]);
   let catsHtml=lv.cats.map(c=>`<div class="cat-zone" data-cat="${c}" ondragover="ev(event)" ondrop="drop(event,'${c.replace(/'/g,"\\'")}')" onclick="catClick('${c.replace(/'/g,"\\'")}')"><h3>${c}</h3><div class="drop-area" id="drop-${c.replace(/[^a-zA-Z0-9]/g,'')}"></div></div>`).join('');
   let itemsHtml=shuffledItems.map((it,i)=>`<div class="item-chip" draggable="true" ondragstart="ds(event,${i})" onclick="itemClick(${i})" data-idx="${i}" id="chip-${i}">${it.t}</div>`).join('');
@@ -140,7 +150,7 @@ function renderLevel(){
     <p class="subtitle">Education a la Citoyennete Numerique</p>
     <div class="score-badge">Score : <span>${score}</span></div>
     <div class="progress-wrap">
-      <div class="progress-info"><span>Niveau ${lvlIdx+1}/${LEVELS.length}</span><span>${pct}%</span></div>
+      <div class="progress-info"><span>Niveau ${lvlIdx+1}/${filteredLEVELS.length}</span><span>${pct}%</span></div>
       <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
     </div>
     <div class="level-card">
@@ -190,7 +200,7 @@ function placeItem(i,cat){
 }
 
 function validateLevel(){
-  const lv=LEVELS[lvlIdx];
+  const lv=filteredLEVELS[lvlIdx];
   const items=window._items;
   let correct=0,total=items.length,corrections=[];
   items.forEach((it,i)=>{
@@ -220,7 +230,7 @@ function showResults(){
     <div class="results-card">
       <h2>Resultats finaux</h2>
       <div class="final-score">${score} / ${totalItems}</div>
-      <div class="final-sub">${pct}% de reussite sur ${LEVELS.length} niveaux</div>
+      <div class="final-sub">${pct}% de reussite sur ${filteredLEVELS.length} niveaux</div>
       <div class="btn-row" style="justify-content:center">
         <button class="btn btn-primary" onclick="init()">&#128260; Rejouer</button>
       </div>

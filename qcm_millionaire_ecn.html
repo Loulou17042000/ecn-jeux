@@ -157,6 +157,16 @@ const LADDER=[100,200,300,500,1000,2000,4000,8000,16000,32000,64000,125000,25000
 const SAFE=[4,9,14];
 const TOTAL_Q=15;
 
+// Chapter filter from URL
+const urlParams = new URLSearchParams(window.location.search);
+const chFilter = urlParams.get('ch');
+let filteredBANK = BANK;
+if(chFilter) {
+  const chs = chFilter.split(',').map(c => 'Ch'+c.trim());
+  filteredBANK = BANK.filter(q => chs.includes(q.ch));
+}
+const chLabel = chFilter ? 'Chapitre' + (chFilter.includes(',') ? 's ' : ' ') + chFilter : 'Tous les chapitres';
+
 let pool,qIdx,jokers,answered,currentQ,eliminated;
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -166,11 +176,11 @@ function init(){showStart();}
 function showStart(){
   document.getElementById('app').innerHTML=`
     <h1>Qui veut gagner des millions ?</h1>
-    <p class="subtitle">Education a la Citoyennete Numerique (ECN)</p>
+    <p class="subtitle">Education a la Citoyennete Numerique (ECN) — ${chLabel}</p>
     <div class="start-screen">
       <div class="start-icon">&#128176;</div>
       <h2>Devenez millionnaire du savoir !</h2>
-      <p>15 questions de difficulte croissante, tirees parmi ${BANK.length}+ questions. 3 jokers pour vous aider !</p>
+      <p>15 questions de difficulte croissante, tirees parmi ${filteredBANK.length}+ questions. 3 jokers pour vous aider !</p>
       <ul class="rules">
         <li>15 paliers de 100 a 1 000 000 EUR</li>
         <li>Paliers de securite : 1 000 EUR, 32 000 EUR, 1 000 000 EUR</li>
@@ -183,7 +193,7 @@ function showStart(){
 }
 
 function startGame(){
-  pool=shuffle([...BANK]).slice(0,TOTAL_Q);
+  pool=shuffle([...filteredBANK]).slice(0,Math.min(TOTAL_Q,filteredBANK.length));
   qIdx=0;jokers={fifty:false,friend:false,audience:false};answered=false;eliminated=[];
   showQuestion();
 }
